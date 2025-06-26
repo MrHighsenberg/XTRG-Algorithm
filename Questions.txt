@@ -1,0 +1,1 @@
+What is the minimal bond dimension we require for the linear initialization?
