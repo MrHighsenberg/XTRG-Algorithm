@@ -12,6 +12,7 @@ Parameters:
 Returns:
 - `Splus`: The spin raising operator.
 - `Sminus`: The spin lowering operator.
+- `Id`: The identity operator.
 
 The spin local space operators are represented as matrices of size `(2spin + 1, 2spin + 1)`.
 """
