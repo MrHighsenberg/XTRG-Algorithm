@@ -101,7 +101,7 @@ Returns:
 
 Note: Assumes open boundary conditions and matching physical dimensions.
 """
-function add_mpo(A::Vector, B::Vector)
+function add_mpo(A::Vector, B::Vector) # input: an mpo representing an operator, output: a matrix representing that operator
     L = length(A)
     C = Vector{Any}(undef, L)
     for i in 1:L
