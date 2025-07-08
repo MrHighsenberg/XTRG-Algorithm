@@ -61,6 +61,7 @@ function contract(A, Aindices, B, Bindices, indexpermutation=[])
     return C
 end
 
+
 """
     updateLeft(C, B, X, A)
 

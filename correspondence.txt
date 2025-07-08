@@ -1,1 +1,3 @@
 What is the minimal bond dimension we require for the linear initialization?
+
+Todos: think about square mpo method (probably not needed as such), work on the tests files

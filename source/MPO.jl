@@ -35,6 +35,7 @@ function spinlocalspace(spin::Rational=1//2)
     return Splus, Sminus, Id
 end
 
+
 """
     xychain_mpo(L::Int, J::Float64)
 
@@ -67,6 +68,7 @@ function xychain_mpo(L::Int, J::Float64)
     ]
 end
 
+
 """
     identity_mpo(L::Int, d::Int)
 
@@ -84,6 +86,7 @@ function identity_mpo(L::Int, d::Int=2)
     return [W for _ in 1:L]
 end
 
+
 """
     add_mpo(A::Vector, B::Vector)
 
@@ -98,6 +101,7 @@ Parameters:
 
 Returns:
 - `C::Vector`: List of MPO tensors representing the sum A + B.
+
 
 Note: Assumes open boundary conditions and matching physical dimensions.
 """
@@ -118,20 +122,21 @@ function add_mpo(A::Vector, B::Vector)
     return C
 end
 
+
+# # # # this method will probably not be needed, we do not explicitly contract but only update 2 sites variationally (I will think about it again)
 """
     square_mpo(mpo, Dmax, Nsweep)
 
-mpo2 is an mpo representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
+Returns mpo2 as an MPO representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
 
 Parameters:
-- `mpo::Vector{Array{ComplexF64, 4}}`: the mpo representing the operator to be squared (each tensor has legs ordered as left - bottom - right - top)
+- `mpo::Vector{Array{ComplexF64, 4}}`: the mpo representing the operator to be squared, # leg ordering for each tensor: left bottom right top
 - `Dmax::Int`: max bond dimension of output mpo
-- `Nsweep::Int`: Number of sweeps will be 2*Nsweep (Nsweep left -> right sweeps, Nsweep right -> left sweeps)
 Returns:
 - `mpo2::Vector{Array{ComplexF64, 4}}`: the mpo representing the squared operator
 
 """
-function square_mpo(mpo, Dmax, Nsweep)
+function square_mpo(mpo, Dmax)
     L = length(mpo)
     d = size(mpo[1], 2) # we assume the local dimension is equal at all sites
     max_L_virt_bd = maximum([size(W, 1) for W in mpo])

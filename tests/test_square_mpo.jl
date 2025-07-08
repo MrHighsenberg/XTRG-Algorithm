@@ -1,8 +1,8 @@
 using Test
-include("../source/square_mpo.jl")
-include("../source/lecture_functions.jl")
-using .XTRG: square_mpo
-using .lecture_functions: contract
+include("../source/MPO.jl")
+include("../source/contractions.jl")
+using .MPO: square_mpo
+using .contractions: contract
 using LinearAlgebra
 
 @testset "mpo squaring" begin
@@ -11,7 +11,7 @@ using LinearAlgebra
     d = 10
     mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
     Nsweep = 10
-    mpo2_exact = square_mpo(mpo, D^2, Nsweep)
+    mpo2_exact = square_mpo(mpo, D^2)
     # mpo2_truncated = square_mpo(mpo, 2 * D - 1, Nsweep)
     function get_matrix(M, d)
         M1, M2, M3 = M

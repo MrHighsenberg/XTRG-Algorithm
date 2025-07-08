@@ -1,6 +1,6 @@
 using Test
 include("../source/lecture_functions.jl")
-using .lecture_functions
+using .contractions
 
 @testset "contract function" begin
     @testset "Dimensions of contracted tensors" begin
