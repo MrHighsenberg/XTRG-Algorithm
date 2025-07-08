@@ -1,6 +1,6 @@
 using Test, LinearAlgebra
 include("../source/contractions.jl")
-using .contractions
+import .contractions: updateLeft
 
 @testset "updateLeft" begin
     @testset "updateLeft dimensions" begin
@@ -12,7 +12,7 @@ using .contractions
         C = ones(D, w, D)
         X = ones(w, d, w, d)
 
-        Cnew = contractions.updateLeft(C, A, X, A) #for some reason, getting errors if module not specified. there seem to be conflicting definitions of updateLeft. changing name of this function lets you pass all tests WITHOUT specifying module. weird!
+        Cnew = updateLeft(C, A, X, A) #for some reason, getting errors if module not specified. there seem to be conflicting definitions of updateLeft. changing name of this function lets you pass all tests WITHOUT specifying module. weird!
         @test size(Cnew) == (D, w, D)
         @test all(Cnew .== D^2 * w * d^2)
     end
@@ -32,6 +32,6 @@ using .contractions
         A = reshape(U, (4, 2, 4))
         C = reshape(I(4), (4, 1, 4))
         X = reshape(I(2), (1, 2, 1, 2))
-        @test contractions.updateLeft(C, A, X, A) ≈ reshape(I(4), (4, 1, 4))
+        @test updateLeft(C, A, X, A) ≈ reshape(I(4), (4, 1, 4))
     end
 end

@@ -1,8 +1,8 @@
 using Test
 include("../source/MPO.jl")
 include("../source/contractions.jl")
-using .MPO: square_mpo
-using .contractions: contract
+import .MPO: square_mpo
+import .contractions: contract
 using LinearAlgebra
 
 @testset "mpo squaring" begin

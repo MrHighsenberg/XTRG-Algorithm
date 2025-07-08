@@ -1,6 +1,9 @@
 module MPO
 export xychain_mpo, identity_mpo, add_mpo, square_mpo
 using LinearAlgebra
+include("../source/contractions.jl")
+import .contractions: contract
+
 
 """
     spinlocalspace(spin::Rational=1//2)

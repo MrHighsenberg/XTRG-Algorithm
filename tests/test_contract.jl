@@ -1,6 +1,6 @@
 using Test
-include("../source/lecture_functions.jl")
-using .contractions
+include("../source/contractions.jl")
+import .contractions: contract
 
 @testset "contract function" begin
     @testset "Dimensions of contracted tensors" begin

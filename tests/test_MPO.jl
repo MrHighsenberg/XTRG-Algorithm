@@ -1,10 +1,12 @@
 using Test
 include("../source/MPO.jl")
-using .MPO
+include("../source/contractions.jl")
+import .contractions: contract
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, add_mpo
 using LinearAlgebra
 
 @testset "spin 1/2 operators" begin
-    Splus, _, Id = MPO.spinlocalspace(1 // 2) 
+    Splus, _, Id = spinlocalspace(1 // 2) 
     @test Splus == [
         0 1/sqrt(2)
         0 0
