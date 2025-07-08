@@ -1,8 +1,8 @@
 using Test
-include("../source/square_mpo.jl")
-include("../source/lecture_functions.jl")
-using .XTRG: square_mpo
-using .lecture_functions: contract
+include("../source/MPO.jl")
+include("../source/contractions.jl")
+import .MPO: square_mpo
+import .contractions: contract
 using LinearAlgebra
 
 @testset "mpo squaring" begin
