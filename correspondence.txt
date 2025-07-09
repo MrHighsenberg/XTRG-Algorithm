@@ -3,14 +3,6 @@
 - I updated the linear intialization, thank you for spotting the error. In fact, I verified that we have to multiply by beta^(1/L) as in each
 summand of the global Hamiltonian there appears one operator from each local MPO tensors, so we have to distribute the weight between them. 
 
-- As for the square_mpo method, they don't use it in the paper but use the variational optimization to get close to rho(2*beta). This has 
-advantageous scaling because we want to make use of the fact that the bond dimension need to increase only linearly in beta - therefore the
-naive square method increases the bond dimension too quick. However, we can use it to check our results (and also truncate rho eventually to
-see that nothing really changes as long as we provide enough weight for the expected scaling of S propto log(beta)).
-
-- We will need to find out how to get our MPO into canonical form before starting the variational update. Having finished this, the result 
-corresponds to the state rho(2*beta).
-
 - I have created another notebook, where we can document our progress and distribute the work
 
 # Messages Damiano:
