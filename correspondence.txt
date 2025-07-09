@@ -11,4 +11,6 @@ see that nothing really changes as long as we provide enough weight for the expe
 - We will need to find out how to get our MPO into canonical form before starting the variational update. Having finished this, the result 
 corresponds to the state rho(2*beta).
 
+- I have created another notebook, where we can document our progress and distribute the work
+
 # Messages Damiano:
