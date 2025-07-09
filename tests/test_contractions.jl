@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 include("../source/contractions.jl")
-import .contractions: contract, updateLeft, updateLeftEnv
+import .contractions: contract, tensor_svd, updateLeft, updateLeftEnv
 
 @testset "contract" begin
     @testset "Dimensions of contracted tensors" begin
@@ -24,6 +24,41 @@ import .contractions: contract, updateLeft, updateLeftEnv
         @test contract(A, 2, B, 1) == A * B
         @test contract(B, 1, A, 2, (2, 1)) == A * B
         @test contract(A, 2, Id, 1) == A
+    end
+end
+
+@testset "tensor_svd" begin
+    @testset "Obtaining isometries using tensor_svd" begin
+        d = 3
+        D = 30
+        M = rand(D, d, D)
+        # SVD with left leg as U
+        U, S, Vd, discardedweight = tensor_svd(M, [1])
+        @test size(U) == (D, D)
+        @test size(S) == (D,)
+        @test size(Vd) == (D, d, D)
+        @test contract(contract(U, [2], Diagonal(S), [1]), [2], Vd, [1]) ≈ M
+        # Check left isometry condition: U'U = I
+        @test contract(U, [1], conj(U), [1]) ≈ I(D)
+        # Check right isometry condition: Vd Vd' = I
+        @test contract(Vd, [2, 3], conj(Vd), [2, 3]) ≈ I(D)
+    end
+
+    @testset "tensor_svd with tolerance" begin
+        T = diagm([3.0, 2.0, 1.0, 0.1])
+        T = reshape(T, (2, 2, 2, 2))
+        U, S, Vd, discardedweight = tensor_svd(T, [1, 2], tolerance=1.5)
+        @test length(S) == 2
+        @test isapprox(discardedweight, 1.0^2 + 0.1^2; atol=1e-12)
+    end
+
+    @testset "tensor_svd on empty tensor" begin
+        T = zeros(0, 0)
+        U, S, Vd, discardedweight = tensor_svd(T, [1])
+        @test size(U) == (0, 0)
+        @test size(S) == (0,)
+        @test size(Vd) == (0, 0)
+        @test discardedweight == 0.0
     end
 end
 
