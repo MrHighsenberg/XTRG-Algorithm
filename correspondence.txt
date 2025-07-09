@@ -1,7 +1,7 @@
 # Messages Matthias:
 
-- I updated the linear intialization, thank you for spotting that we would have multiplied by 1e-6^L. I think it's most convenient to
-distribute the weight on all local MPO tensors equally. This does not involve too small numbers, so it should be fine.
+- I updated the linear intialization, thank you for spotting the error. In fact, I verified that we have to multiply by beta^(1/L) as in each
+summand of the global Hamiltonian there appears one operator from each local MPO tensors, so we have to distribute the weight between them. 
 
 - As for the square_mpo method, they don't use it in the paper but use the variational optimization to get close to rho(2*beta). This has 
 advantageous scaling because we want to make use of the fact that the bond dimension need to increase only linearly in beta - therefore the
