@@ -1,3 +1,14 @@
-What is the minimal bond dimension we require for the linear initialization?
+# Messages Matthias:
 
-# Latest Todos: We have to think about the square mpo method (probably not needed as such I would say now)
+- I updated the linear intialization, thank you for spotting that we would have multiplied by 1e-6^L. I think it's most convenient to
+distribute the weight on all local MPO tensors equally. This does not involve too small numbers, so it should be fine.
+
+- As for the square_mpo method, they don't use it in the paper but use the variational optimization to get close to rho(2*beta). This has 
+advantageous scaling because we want to make use of the fact that the bond dimension need to increase only linearly in beta - therefore the
+naive square method increases the bond dimension too quick. However, we can use it to check our results (and also truncate rho eventually to
+see that nothing really changes as long as we provide enough weight for the expected scaling of S propto log(beta)).
+
+- We will need to find out how to get our MPO into canonical form before starting the variational update. Having finished this, the result 
+corresponds to the state rho(2*beta).
+
+# Messages Damiano:
