@@ -3,7 +3,7 @@ using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, updateLeft
 
-@testset "contract function" begin
+@testset "contract" begin
     @testset "Dimensions of contracted tensors" begin
         A = ones(3, 4, 5)
         B = ones(1, 3, 4, 10)

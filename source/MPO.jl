@@ -126,41 +126,38 @@ function add_mpo(A::Vector, B::Vector)
 end
 
 
-# # # # this method will probably not be needed, we do not explicitly contract but only update 2 sites variationally (I will think about it again)
 """
-    square_mpo(mpo, Dmax, Nsweep)
+    square_mpo(mpo::Vector, Dmax::Int)
 
 Returns mpo2 as an MPO representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
 
 Parameters:
 - `mpo::Vector{Array{ComplexF64, 4}}`: the mpo representing the operator to be squared, # leg ordering for each tensor: left bottom right top
-- `Dmax::Int`: max bond dimension of output mpo
+- `Dmax::Int`: maximal bond dimension of output mpo
 Returns:
-- `mpo2::Vector{Array{ComplexF64, 4}}`: the mpo representing the squared operator
+- `mpo2::Vector{Array{ComplexF64, 4}}`: the mpo representing the squared operator if maximal bond dimension is not exceeded (else return mpo)
 
 """
-function square_mpo(mpo, Dmax)
+function square_mpo(mpo::Vector, Dmax::Int)
     L = length(mpo)
-    d = size(mpo[1], 2) # we assume the local dimension is equal at all sites
-    max_L_virt_bd = maximum([size(W, 1) for W in mpo])
-    max_R_virt_bd = maximum([size(W, 3) for W in mpo])
-    mpo2 = Vector{Any}(undef, L)
-    D = max(max_L_virt_bd, max_R_virt_bd) # max bond dimension of W tensors that are elements of mpo. (Bond dimensions don't have to be equal)
-    if D^2 <= Dmax # in this case we won't need to truncate/optimize anything
+    d = size(mpo[1], 2) # assume local dimension equal at all sites
+    D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # maximal bond dimension across all W tensors
+    if D^2 <= Dmax
+        mpo2 = Vector{Any}(undef, L)
         for i in (1:L)
             W = mpo[i]
             DL = size(W, 1)
             DR = size(W, 3)
-            WW =  contract(W, [4], W, [2])
-            WW1 = permutedims(WW, (1,4,3,2,5,6))
-            WW2 = permutedims(WW1, (1,2,4,3,5,6))
-            WW3 = reshape(WW2, (DL^2, d, DR^2, d))
-            mpo2[i] = WW3 # when "fusing" the two horizontal virtual legs, these are ordered bottom - top
+            WW = contract(W, [4], W, [2])
+            WW = permutedims(WW, (1,4,2,3,5,6))
+            WW = reshape(WW, (DL^2, d, DR^2, d)) # merging horizontal virtual legs from bottom to top
+            mpo2[i] = WW
         end
-    else # in this case we need to truncate and optimize
-        # mpo2 = ...
+        return mpo2
+    else # square mpo requires too much storage
+        print("Maximal bond dimension reached")
+        return mpo
     end
-    return mpo2
 end
 
 end
