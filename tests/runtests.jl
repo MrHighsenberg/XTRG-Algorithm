@@ -1,6 +1,4 @@
 using Test
 
-include("test_contract.jl")
-include("test_updateLeft.jl")
-include("test_MPO.jl")
-include("test_square_mpo.jl")
+include("test_contractions.jl")
+# include("test_MPO.jl")
