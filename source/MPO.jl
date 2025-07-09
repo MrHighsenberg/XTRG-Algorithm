@@ -138,7 +138,7 @@ Returns:
 - `mpo2::Vector{Array{ComplexF64, 4}}`: the mpo representing the squared operator if maximal bond dimension is not exceeded (else return mpo)
 
 """
-function square_mpo(mpo::Vector, Dmax::Int)
+function square_mpo(mpo::Vector, Dmax::Int=100)
     L = length(mpo)
     d = size(mpo[1], 2) # assume local dimension equal at all sites
     D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # maximal bond dimension across all W tensors
@@ -155,7 +155,7 @@ function square_mpo(mpo::Vector, Dmax::Int)
         end
         return mpo2
     else # square mpo requires too much storage
-        print("Maximal bond dimension reached")
+        print("Maximal bond dimension D = $Dmax reached")
         return mpo
     end
 end
