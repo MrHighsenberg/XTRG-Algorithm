@@ -14,3 +14,5 @@ summand of the global Hamiltonian there appears one operator from each local MPO
 - I see your point with the workflow notebook, good idea
 
 - to be discussed later: 1) who does what, 2) how do we initialize the squared mpo before the sweeping?
+
+- ok lets go for (-beta)^(1/L) in the sense exp(i*pi/L) * beta^(1/L)
