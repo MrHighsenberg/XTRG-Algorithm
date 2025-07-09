@@ -6,3 +6,9 @@ summand of the global Hamiltonian there appears one operator from each local MPO
 - I have created another notebook, where we can document our progress and distribute the work
 
 # Messages Damiano:
+
+- Thanks for fixing the beta^(1/L) factor (no idea why i suggested a log). I think there may still be a sign issue in case L is even though, i think we can just put a sign in front of e.g. the first site tensor H_mpo[1]
+
+- I see your point with the workflow notebook, good idea
+
+- to be discussed later: 1) who does what, 2) how do we initialize the squared mpo before the sweeping?
