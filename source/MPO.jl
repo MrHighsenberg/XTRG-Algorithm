@@ -155,8 +155,7 @@ function square_mpo(mpo::Vector, Dmax::Int=100)
         end
         return mpo2
     else # square mpo requires too much storage
-        print("Maximal bond dimension D = $Dmax reached")
-        return mpo
+        error("Maximal bond dimension D = $Dmax reached")
     end
 end
 
