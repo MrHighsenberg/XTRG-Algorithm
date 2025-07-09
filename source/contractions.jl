@@ -1,5 +1,5 @@
 module contractions
-export contract, updateLeft
+export contract, updateLeft, updateLeftEnv
 using LinearAlgebra
 
 """
@@ -102,6 +102,51 @@ function updateLeft(C, B, X, A)
     CA = contract(C, [3], A, [1])
     CAX = contract(CA, [2, 3], X, [1, 4])
     return contract(conj(B), [1, 2], CAX, [1, 3], [1, 3, 2])
+end
+
+
+"""
+    updateLeftEnv(V::Array{ComplexF64,3}, A::Array{ComplexF64,4}, B::Array{ComplexF64,4}, C::Array{ComplexF64,4})
+
+Update function to compute the left environment V for given input tensors, in the following pattern,
+
+   .-----.   
+   |     |
+   |  .--A-- 3
+   |  |  |
+   |  V--B-- 2
+   |  |  |
+   |  '--C-- 1
+   |     |
+   '-----'
+
+Input:
+- `V::AbstractArray` (3-leg tensor): left environment of the current site.
+- `A::AbstractArray`, `B::AbstractArray`, `C::AbstractArray` (4-leg tensors): local MPO tensors. 
+    # leg ordering of each tensor: left bottom right top
+
+Output:
+- `V_new::Array`: Updated tensor corresponding to the left environment for the site to the right of the output legs.
+"""
+function updateLeftEnv(V::AbstractArray, A::AbstractArray, B::AbstractArray, C::AbstractArray)
+    # Checking dimensionality errors
+    if ndims(V) != 3
+        error("In updateLeft, got parameter V with $(ndims(V)) dimensions. V must have 3 dimensions.")
+    end
+    if ndims(A) != 4
+        error("In updateLeft, got parameter A with $(ndims(A)) dimensions. A must have 4 dimensions.")
+    end
+    if ndims(B) != 4
+        error("In updateLeft, got parameter B with $(ndims(B)) dimensions. B must have 4 dimensions.")
+    end
+    if ndims(C) != 4
+        error("In updateLeft, got parameter C with $(ndims(C)) dimensions. C must have 4 dimensions.")
+    end
+
+    VA = contract(V, [3], A, [1])
+    VAB = contract(VA, [2, 3], B, [1, 4])
+    VABC = contract(VAB, [1,3,4], C, [1,2,4])
+    return permutedims(VABC, [3,2,1])
 end
 
 end

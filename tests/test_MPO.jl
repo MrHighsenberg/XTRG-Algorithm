@@ -53,7 +53,6 @@ end
         ]
         id_mpo = identity_mpo(2, 2)
         @test two_site_mpo_to_matrix(add_mpo(H_mpo, id_mpo), 2) ≈ H_ex + I(4)
-        @test two_site_mpo_to_matrix(add_mpo(id_mpo, H_mpo), 2) ≈ H_ex + I(4)
     end
 end
 

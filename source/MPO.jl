@@ -85,7 +85,7 @@ Returns:
 - List of MPO tensors W[i] for sites i = 1,...,L.
 """
 function identity_mpo(L::Int, d::Int=2)
-    W = reshape(Matrix{ComplexF64}(I, d, d), 1, d, 1, d) # Ordering: left bottom right top
+    W = reshape(Matrix{Float64}(I, d, d), 1, d, 1, d) # Ordering: left bottom right top
     return [W for _ in 1:L]
 end
 

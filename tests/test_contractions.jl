@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 include("../source/contractions.jl")
-import .contractions: contract, updateLeft
+import .contractions: contract, updateLeft, updateLeftEnv
 
 @testset "contract" begin
     @testset "Dimensions of contracted tensors" begin
@@ -37,9 +37,9 @@ end
         C = ones(D, w, D)
         X = ones(w, d, w, d)
 
-        Cnew = updateLeft(C, A, X, A)
-        @test size(Cnew) == (D, w, D)
-        @test all(Cnew .== D^2 * w * d^2)
+        C_new = updateLeft(C, A, X, A)
+        @test size(C_new) == (D, w, D)
+        @test all(C_new .== D^2 * w * d^2)
     end
 
     @testset "updateLeft applied to isometry" begin
@@ -58,5 +58,42 @@ end
         C = reshape(I(4), (4, 1, 4))
         X = reshape(I(2), (1, 2, 1, 2))
         @test updateLeft(C, A, X, A) ≈ reshape(I(4), (4, 1, 4))
+    end
+end
+
+@testset "updateLeftEnv" begin
+    @testset "updateLeftEnv dimensions" begin
+        Da = 3
+        Db = 3
+        Dc = 9
+        d = 2
+
+        V = ones(Dc, Db, Da)
+        A = ones(Da, d, Da, d)
+        B = ones(Db, d, Db, d)
+        C = ones(Dc, d, Dc, d)
+
+        V_new = updateLeftEnv(V, A, B, C)
+        @test size(V_new) == (Dc, Db, Da)
+        @test all(V_new .== Da * Db * Dc * d^3)
+    end
+
+    @testset "updateLeftEnv applied to isometry" begin
+        # This is another randomly generated isometry.
+        U = [
+            -0.15749891104736813 - 0.30508368177584466im	-0.15324927380298695 + 0.2253958711510132im	-0.25468447240514075 - 0.07963018090540669im	-0.2448374080800449 + 0.07880973555796383im
+            -0.1650117127599791 + 0.1936879424107124im	-0.3314315705793687 + 0.02572851680625796im	0.11909134280819163 + 0.1307050281733177im	-0.3318385223283171 + 0.001833364125427478im
+            0.5199588209315036 + 0.4707902259955522im	0.017704431765831183 + 0.19734011030087123im	-0.4828023886586157 - 0.09690016306139951im	0.07177695892046267 + 0.07426934010109275im
+            -0.02983410619995426 + 0.30419654031556137im	0.3403544516328344 - 0.36432837944629193im	0.037737248672448154 + 0.25386652909755975im	-0.5702597122849564 + 0.24291938528767326im
+            -0.13343718864192225 - 0.14257072776758806im	0.17605652735156302 - 0.10703177015478504im	-0.5296537643978843 - 0.15059280399118988im	0.06733844957830346 + 0.3132982238181955im
+            0.09694921211136276 - 0.08937438071710804im	-0.23351174864659396 + 0.20831337223151464im	-0.15447418850412883 + 0.41371914390725195im	-0.3192897646023946 + 0.22966616396169964im
+            0.03929596547909546 - 0.2042001391234323im	-0.0522697291836111 - 0.5917601204300642im	-0.10897006526476426 - 0.18289770736039745im	-0.07607054344272768 + 0.07666740696504934im
+            0.3059014219131799 + 0.19902652919571348im	-0.17415053960130927 - 0.061279346630354115im	0.16170557527699536 + 0.13948602651357145im	-0.10563269267344981 - 0.3855438237428369im
+        ]
+        V = reshape(I(4), (4, 1, 4))
+        A = reshape(U, (4, 2, 4, 1))
+        B = reshape(I(2), (1, 2, 1, 2))
+        C = permutedims(reshape(conj(U), (4, 2, 4, 1)), (1, 4, 3, 2))
+        @test updateLeftEnv(V, A, B, C) ≈ reshape(I(4), (4, 1, 4))
     end
 end

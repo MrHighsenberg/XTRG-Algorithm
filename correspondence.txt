@@ -1,6 +1,8 @@
 # Messages Matthias:
 
-- For the implementation of the contraction for the Frobenius norm, we can use the updateLeftEnv function with trivial tensors C and B
+- For the implementation of the contraction for the Frobenius norm, we can use the updateLeftEnv function with trivial tensors C and B.
+
+- I have finished the code for the updateLeftEnv function and added another unit test for it.
 
 # Messages Damiano:
 
