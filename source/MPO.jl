@@ -160,3 +160,23 @@ function square_mpo(mpo::Vector, Dmax::Int=100)
 end
 
 end
+
+
+"""
+    leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+
+Returns mpo in left-canonical form.
+
+Parameters:
+- `mpo::Vector`: List of MPO tensor
+- `Nkeep`: maximum number of singular values to keep. Default is `typemax(Int)`.
+- `tolerance`: minimum magnitude of singular value to keep. Default is `0.0`.
+
+Returns:
+- `mpoleft::Vector`: mpo in left-canonical form.
+"""
+function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    mpoleft = 0
+    ### to be implemented
+    return(mpoleft)
+end

@@ -1,8 +1,9 @@
 using Test
 using LinearAlgebra
+include("../source/contractions.jl")
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, add_mpo, square_mpo
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo
 
 @testset "spinlocalspace" begin
     Splus, _, Id = spinlocalspace(1//2) 
@@ -56,22 +57,43 @@ end
     end
 end
 
+function mpo_to_tensor(mpo)
+    L = length(mpo)
+    T1 = mpo[1]
+    D1 = size(T1, 1)
+    d1 = size(T1, 2)
+    for itL in 2:L
+        T2 = mpo[itL]
+        D2 = size(T2, 3)
+        d2 = size(T2, 2)
+        T1 = contract(T1, (3), T2, (1))
+        T1 = permutedims(T1, (1,2,4,3,5,6))
+        T1 = permutedims(T1, (1,2,3,5,4,6))
+        T1 = reshape(T1, (D1, d1*d2, D2, d1*d2))
+        d1 = d1 * d2
+    end
+    return(T1)
+end
+
 @testset "square_mpo" begin
     L = 3
     D = 10
     d = 10
     mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
     mpo2 = square_mpo(mpo, D^2)
-
-    function get_matrix(M, d)
-        M1, M2, M3 = M
-        T = contract(M1, [3], M2, [1])
-        T = contract(T, [5], M3, [1])
-        T = permutedims(T, (1,2,4,6,7,3,5,8))
-        return reshape(T, (d^3, d^3))
-    end
-
-    mat1 = get_matrix(mpo, d)^2
-    mat2 = get_matrix(mpo2, d)
+    mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
+    mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
     @test mat1 ≈ mat2
 end
+
+@testset "left canonical MPO form" begin
+    L = 4
+    mpo = [rand(ComplexF64, 3, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 2, 2)]
+    leftmpo = leftcanonicalmpo(mpo)
+    for itL in 1:L
+        M = leftmpo[itL]
+        @test contract(M, (1,2,4), conj(M), (1,2,4)) ≈ I(size(M, 3)) # checking the isometry property
+    end
+    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) # checking that mpo and leftmpo represent the same operator
+end
+

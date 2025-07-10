@@ -4,8 +4,8 @@
 
 - I have finished the code for the updateLeftEnv and tensor_svd function and added some unit tests for them.
 
-- Please clean up / integrate the comments from your implementation ideas into the steps.
-
 # Messages Damiano:
 
-- 
+- cleaned up / integrated the comments from your implementation ideas into the steps.
+
+- added tests for mpo left canonicalization, will implement function on friday
