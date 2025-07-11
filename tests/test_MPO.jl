@@ -88,12 +88,13 @@ end
 
 @testset "left canonical MPO form" begin
     L = 4
+    #generate random mpo and left-canonicalize it
     mpo = [rand(ComplexF64, 3, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 2, 2)]
     leftmpo = leftcanonicalmpo(mpo)
-    for itL in 1:L
-        M = leftmpo[itL]
-        @test contract(M, (1,2,4), conj(M), (1,2,4)) ≈ I(size(M, 3)) # checking the isometry property
+    for itL in 1:L-1  # Only test for sites 1 to L-1 (left-canonical sites)
+        W = leftmpo[itL]
+        @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) #checking the isometry property
     end
-    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) # checking that mpo and leftmpo represent the same operator
+    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) #checking that mpo and leftmpo represent the same operator
 end
 

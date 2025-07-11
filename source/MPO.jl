@@ -159,8 +159,43 @@ function square_mpo(mpo::Vector, Dmax::Int=100)
     end
 end
 
-end
+#copying svd and svdleft for MPS tensors, copying from lecture
 
+function svd(
+    T::AbstractArray{<:Number}, indicesU::AbstractVector{Int};
+    Nkeep::Int=typemax(Int), tolerance::Float64=0.0
+)
+    if isempty(T)
+        return (zeros(0, 0), zeros(0), zeros(0, 0), 0.0)
+    end
+
+    indicesV = setdiff(1:ndims(T), indicesU)
+    Tmatrix = reshape(
+        permutedims(T, cat(dims=1, indicesU, indicesV)),
+        (prod(size(T)[indicesU]), prod(size(T)[indicesV]))
+    )
+    svdT = LinearAlgebra.svd(Tmatrix)
+
+    Nkeep = min(Nkeep, size(svdT.S, 1))
+    Ntolerance = findfirst(svdT.S .< tolerance)
+    if !isnothing(Ntolerance)
+        Nkeep = min(Nkeep, Ntolerance - 1)
+    end
+
+    U = reshape(svdT.U[:, 1:Nkeep], size(T)[indicesU]..., Nkeep)
+    S = svdT.S[1:Nkeep]
+    Vd = reshape(svdT.Vt[1:Nkeep, :], Nkeep, size(T)[indicesV]...)
+    discardedweight = sum(svdT.S[Nkeep+1:end] .^ 2)
+
+    return (U, S, Vd, discardedweight)
+end
+function svdleft(
+    T::AbstractArray{<:Number};
+    Nkeep::Int=typemax(Int), tolerance::Float64=0.0
+)
+    U, S, Vd, _ = svd(T, collect(1:ndims(T)-1), Nkeep=Nkeep, tolerance=tolerance)
+    return U, Diagonal(S) * Vd
+end
 
 """
     leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
@@ -168,15 +203,40 @@ end
 Returns mpo in left-canonical form.
 
 Parameters:
-- `mpo::Vector`: List of MPO tensor
-- `Nkeep`: maximum number of singular values to keep. Default is `typemax(Int)`.
-- `tolerance`: minimum magnitude of singular value to keep. Default is `0.0`.
+- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of MPO tensor
+- `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
+- `tolerance::Float64`: minimum magnitude of singular value to keep. Default is `0.0`.
 
 Returns:
 - `mpoleft::Vector`: mpo in left-canonical form.
 """
-function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
-    mpoleft = 0
-    ### to be implemented
+function leftcanonicalmpo(mpo::AbstractVector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    L = length(mpo)
+    mps = []
+    #transform mpo to an mps by fusing physical legs
+    for itL in 1:L
+        W = permutedims(mpo[itL], (1,2,4,3))
+        Dleft = size(W,1)
+        Dright = size(W,4)
+        d = size(W,2)
+        push!(mps, reshape(W, (Dleft, d^2, Dright)))
+    end
+    #left canonicalize the mps in place (copying from lecture. i later realized we could simply use tensor_svd and avoid using mps at all.)
+    for itL in 1:L-1
+        A, Lambda = svdleft(mps[itL]; Nkeep=Nkeep, tolerance=tolerance)
+        mps[itL] = A
+        mps[itL+1] = contract(Lambda, [2], mps[itL+1], [1])
+    end
+    #transform left canonicalized mps to left canonicalized mpo
+    mpoleft = []
+    for itL in 1:L
+        M = mps[itL]
+        Dleft = size(M,1)
+        Dright = size(M,3)
+        d = Int(sqrt(size(M, 2)))
+        push!(mpoleft, permutedims(reshape(M, (Dleft, d, d, Dright)), (1,2,4,3)))
+    end
     return(mpoleft)
+end
+
 end

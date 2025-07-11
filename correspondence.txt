@@ -8,4 +8,6 @@
 
 - cleaned up / integrated the comments from your implementation ideas into the steps.
 
-- added tests for mpo left canonicalization, will implement function on friday
+- implemented a working leftcanonicalmpo with tests.
+
+- now i'm going to improve leftcanonicalmpo by using your tensor_svd function, instead of transforming mpo to mps
