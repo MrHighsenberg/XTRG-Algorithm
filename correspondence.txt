@@ -10,4 +10,4 @@
 
 - implemented a working leftcanonicalmpo with tests.
 
-- now i'm going to improve leftcanonicalmpo by using your tensor_svd function, instead of transforming mpo to mps
+- improved leftcanonicalmpo: now it only uses your tensor_svd function, without transforming mpo to mps. can soon delete leftcanonicalmpo_old

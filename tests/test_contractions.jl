@@ -60,6 +60,12 @@ end
         @test size(Vd) == (0, 0)
         @test discardedweight == 0.0
     end
+
+    @testset "tensor_svd on many-leg tensor" begin
+        M = rand(ComplexF64, 3, 5, 2, 5, 7)
+        U, S, Vd, _ = tensor_svd(M, [1, 2, 4])
+        @test M ≈ contract(U, [4], contract(Diagonal(S), [2], Vd, [1]), [1], (1,2,4,3,5))
+    end
 end
 
 @testset "updateLeft" begin

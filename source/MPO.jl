@@ -1,8 +1,8 @@
 module MPO
-export xychain_mpo, identity_mpo, add_mpo, square_mpo
+export xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo
 using LinearAlgebra
 include("../source/contractions.jl")
-import .contractions: contract
+import .contractions: contract, tensor_svd
 
 
 """
@@ -159,7 +159,38 @@ function square_mpo(mpo::Vector, Dmax::Int=100)
     end
 end
 
-#copying svd and svdleft for MPS tensors, copying from lecture
+"""
+    leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+
+Returns mpo in left-canonical form.
+
+Parameters:
+- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of MPO tensor
+- `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
+- `tolerance::Float64`: minimum magnitude of singular value to keep. Default is `0.0`.
+
+Returns:
+- `leftmpo::Vector`: mpo in left-canonical form.
+"""
+
+function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    L = length(mpo)
+    leftmpo = deepcopy(mpo)
+    #left canonicalize site by site
+    for itL in 1:L-1
+        U, S, Vd, _ = tensor_svd(leftmpo[itL], [1,2,4]; Nkeep=Nkeep, tolerance=tolerance)
+        leftmpo[itL] = permutedims(U, (1,2,4,3))
+        leftmpo[itL + 1] = contract(Diagonal(S)*Vd, [2], leftmpo[itL + 1], [1])
+    end
+    return(leftmpo)
+end
+
+#### LATER DISCARD FROM HERE
+
+"""
+Copying below here svd and svdleft for MPS tensors, copying from lecture
+
+"""
 
 function svd(
     T::AbstractArray{<:Number}, indicesU::AbstractVector{Int};
@@ -198,7 +229,7 @@ function svdleft(
 end
 
 """
-    leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    leftcanonicalmpo_old(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
 
 Returns mpo in left-canonical form.
 
@@ -208,9 +239,9 @@ Parameters:
 - `tolerance::Float64`: minimum magnitude of singular value to keep. Default is `0.0`.
 
 Returns:
-- `mpoleft::Vector`: mpo in left-canonical form.
+- `leftmpo::Vector`: mpo in left-canonical form.
 """
-function leftcanonicalmpo(mpo::AbstractVector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+function leftcanonicalmpo_old(mpo::AbstractVector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     L = length(mpo)
     mps = []
     #transform mpo to an mps by fusing physical legs
@@ -228,15 +259,17 @@ function leftcanonicalmpo(mpo::AbstractVector{<:AbstractArray{<:Number, 4}}; Nke
         mps[itL+1] = contract(Lambda, [2], mps[itL+1], [1])
     end
     #transform left canonicalized mps to left canonicalized mpo
-    mpoleft = []
+    leftmpo = []
     for itL in 1:L
         M = mps[itL]
         Dleft = size(M,1)
         Dright = size(M,3)
         d = Int(sqrt(size(M, 2)))
-        push!(mpoleft, permutedims(reshape(M, (Dleft, d, d, Dright)), (1,2,4,3)))
+        push!(leftmpo, permutedims(reshape(M, (Dleft, d, d, Dright)), (1,2,4,3)))
     end
-    return(mpoleft)
+    return(leftmpo)
 end
+
+#### LATER DISCARD UP TO HERE
 
 end
