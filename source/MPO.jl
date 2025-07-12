@@ -1,8 +1,8 @@
 module MPO
-export xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo
+export xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
 using LinearAlgebra
 include("../source/contractions.jl")
-import .contractions: contract, tensor_svd
+import .contractions: contract, tensor_svd, updateLeftEnv
 
 
 """
@@ -91,6 +91,38 @@ end
 
 
 """
+    mpo_to_full_tensor(mpo::Vector)
+
+Converts an MPO to its full tensor representation.
+
+Parameters:
+- `mpo::Vector`: List of MPO tensors.
+
+Returns:
+- `T1::Array`: Full tensor representation of the MPO.
+
+Note: Note that the full tensor representation can only be computed efficiently for small chain lengths.
+"""
+function mpo_to_full_tensor(mpo::Vector)
+    L = length(mpo)
+    T1 = mpo[1]
+    D1 = size(T1, 1)
+    d1 = size(T1, 2)
+    for itL in 2:L
+        T2 = mpo[itL]
+        D2 = size(T2, 3)
+        d2 = size(T2, 2)
+        T1 = contract(T1, [3], T2, [1])
+        T1 = permutedims(T1, (1,2,4,3,5,6))
+        T1 = permutedims(T1, (1,2,3,5,4,6))
+        T1 = reshape(T1, (D1, d1*d2, D2, d1*d2))
+        d1 = d1 * d2
+    end
+    return(T1)
+end
+
+
+"""
     add_mpo(A::Vector, B::Vector)
 
 Adds two MPOs A and B with the same physical dimensions but possibly different bond dimensions.
@@ -138,7 +170,7 @@ Returns:
 - `mpo2::Vector{Array{ComplexF64, 4}}`: the mpo representing the squared operator if maximal bond dimension is not exceeded (else return mpo)
 
 """
-function square_mpo(mpo::Vector, Dmax::Int=100)
+function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
     L = length(mpo)
     d = size(mpo[1], 2) # assume local dimension equal at all sites
     D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # maximal bond dimension across all W tensors
@@ -160,6 +192,54 @@ function square_mpo(mpo::Vector, Dmax::Int=100)
     end
 
     return mpo2
+end
+
+
+"""
+    normalize_mpo!(mpo::Vector)
+
+Normalizes an MPO in-place by distributing the normalization weight across all tensors.
+Uses the updateLefEnv function to iteratively contract the MPO tensors to compute the Frobenius norm.
+
+Parameters:
+- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors 
+
+Returns:
+- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of normalized MPO tensors 
+
+"""
+function normalize_mpo!(mpo::Vector)
+    L = length(mpo)
+    
+    # Initialize left environment as identity
+    V = ones(ComplexF64, 1, 1, 1)
+    
+    # Contract from left to right tracing out physical indices at each step
+    for i in 1:L
+        
+        A = mpo[i]
+        C = conj(permutedims(mpo[i], (1,4,3,2)))
+        
+        # Create trivial middle tensor for updateLeftEnv function
+        d = size(A, 2)
+        B = zeros(ComplexF64, 1, d, 1, d)
+        for j in 1:d
+            B[1, j, 1, j] = 1.0
+        end
+        
+        # Update left environment
+        V = updateLeftEnv(V, A, B, C)
+    end
+    
+    # Evaluate the Frobenius norm
+    norm_squared = real(V[1, 1, 1])
+    norm = sqrt(norm_squared)
+    
+    # Normalize the MPO by distributing the weight    
+    for i in 1:L
+        mpo[i] .*= norm^(-1/L)
+    end
+    
 end
 
 

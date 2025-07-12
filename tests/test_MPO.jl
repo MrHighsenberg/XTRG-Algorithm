@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, mpo_to_full_tensor, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
 
 @testset "spinlocalspace" begin
     Splus, _, Id = spinlocalspace(1//2) 
@@ -56,22 +56,20 @@ end
     end
 end
 
-function mpo_to_tensor(mpo)
-    L = length(mpo)
-    T1 = mpo[1]
-    D1 = size(T1, 1)
-    d1 = size(T1, 2)
-    for itL in 2:L
-        T2 = mpo[itL]
-        D2 = size(T2, 3)
-        d2 = size(T2, 2)
-        T1 = contract(T1, [3], T2, [1])
-        T1 = permutedims(T1, (1,2,4,3,5,6))
-        T1 = permutedims(T1, (1,2,3,5,4,6))
-        T1 = reshape(T1, (D1, d1*d2, D2, d1*d2))
-        d1 = d1 * d2
+@testset "mpo_to_full_tensor" begin
+    @testset "Identity MPO" begin
+        id_mpo = identity_mpo(2, 2)
+        full_tensor = mpo_to_full_tensor(id_mpo)
+        @test size(full_tensor) == (1, 4, 1, 4)
+        @test reshape(full_tensor, 4, 4) ≈ I(4)
     end
-    return(T1)
+    
+    @testset "Two-site tensor product" begin
+        sigma_x = [0.0 1.0; 1.0 0.0]
+        mpo = [reshape(sigma_x, 1, 2, 1, 2), reshape(sigma_x, 1, 2, 1, 2)]
+        full_tensor = mpo_to_full_tensor(mpo)
+        @test reshape(full_tensor, 4, 4) ≈ kron(sigma_x, sigma_x)
+    end
 end
 
 @testset "square_mpo" begin
@@ -80,21 +78,52 @@ end
     d = 10
     mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
     mpo2 = square_mpo(mpo, D^2)
-    mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
-    mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
+    mat1 = reshape(mpo_to_full_tensor(mpo), (d^3, d^3))^2
+    mat2 = reshape(mpo_to_full_tensor(mpo2), (d^3, d^3))
     @test mat1 ≈ mat2
+end
+
+@testset "normalize_mpo!" begin
+    L = 4
+    # Generate a random MPO
+    mpo = [rand(ComplexF64, 1, 5, 2, 5), rand(ComplexF64, 2, 8, 5, 8), rand(ComplexF64, 5, 3, 7, 3), rand(ComplexF64, 7, 4, 1, 4)]
+    
+    # Store original tensor for comparison
+    original_tensor = mpo_to_full_tensor(mpo)
+    original_norm = norm(reshape(original_tensor, :))
+    
+    mpo_copy = deepcopy(mpo)
+    
+    # Normalize the MPO
+    normalize_mpo!(mpo)
+    
+    # Check that the normalized MPO has unit Frobenius norm
+    normalized_tensor = mpo_to_full_tensor(mpo)
+    normalized_norm = norm(reshape(normalized_tensor, :))
+    @test normalized_norm ≈ 1.0
+    
+    # Check that the normalized MPO represents the same operator up to scaling
+    @test normalized_tensor ≈ original_tensor / original_norm
+    
+    # Check that the original MPO tensors were modified in-place
+    @test !(mpo[1] ≈ mpo_copy[1])
+    @test !(mpo[3] ≈ mpo_copy[3])
 end
 
 @testset "leftcanonicalmpo" begin
     L = 4
-    # Generate random mpo and left-canonicalize it
-    mpo = [rand(ComplexF64, 3, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 2, 2)]
+    # Generate a random MPO
+    mpo = [rand(ComplexF64, 1, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 1, 2)]
+    
+    # Normalize the MPO 
+    normalize_mpo!(mpo)
 
+    # Left-canonicalize the MPO
     leftmpo = leftcanonicalmpo(mpo)
-    for itL in 1:L-1 # Only test for sites 1 to L-1 (left-canonical sites)
+    for itL in 1:L
         W = leftmpo[itL]
         @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) # Checking the isometry property
     end
-    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) # Checking that mpo and leftmpo represent the same operator
+    @test mpo_to_full_tensor(mpo) ≈ mpo_to_full_tensor(leftmpo) # Checking that both MPOs represent the same operator
     @test !(mpo[3][1,1,1,1] == leftmpo[3][1,1,1,1]) # but local tensors are different
 end
