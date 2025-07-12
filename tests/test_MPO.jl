@@ -56,24 +56,6 @@ end
     end
 end
 
-function mpo_to_tensor(mpo)
-    L = length(mpo)
-    T1 = mpo[1]
-    D1 = size(T1, 1)
-    d1 = size(T1, 2)
-    for itL in 2:L
-        T2 = mpo[itL]
-        D2 = size(T2, 3)
-        d2 = size(T2, 2)
-        T1 = contract(T1, (3), T2, (1))
-        T1 = permutedims(T1, (1,2,4,3,5,6))
-        T1 = permutedims(T1, (1,2,3,5,4,6))
-        T1 = reshape(T1, (D1, d1*d2, D2, d1*d2))
-        d1 = d1 * d2
-    end
-    return(T1)
-end
-
 @testset "square_mpo" begin
     L = 3
     D = 10
@@ -86,6 +68,25 @@ end
 end
 
 @testset "leftcanonicalmpo" begin
+
+    function mpo_to_tensor(mpo)
+        L = length(mpo)
+        T1 = mpo[1]
+        D1 = size(T1, 1)
+        d1 = size(T1, 2)
+        for itL in 2:L
+            T2 = mpo[itL]
+            D2 = size(T2, 3)
+            d2 = size(T2, 2)
+            T1 = contract(T1, [3], T2, [1])
+            T1 = permutedims(T1, (1,2,4,3,5,6))
+            T1 = permutedims(T1, (1,2,3,5,4,6))
+            T1 = reshape(T1, (D1, d1*d2, D2, d1*d2))
+            d1 = d1 * d2
+        end
+        return(T1)
+    end
+
     L = 4
     # Generate random mpo and left-canonicalize it
     mpo = [rand(ComplexF64, 3, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 2, 2)]

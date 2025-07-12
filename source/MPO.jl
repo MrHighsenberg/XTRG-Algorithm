@@ -142,21 +142,24 @@ function square_mpo(mpo::Vector, Dmax::Int=100)
     L = length(mpo)
     d = size(mpo[1], 2) # assume local dimension equal at all sites
     D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # maximal bond dimension across all W tensors
-    if D^2 <= Dmax
-        mpo2 = Vector{Any}(undef, L)
-        for i in (1:L)
-            W = mpo[i]
-            DL = size(W, 1)
-            DR = size(W, 3)
-            WW = contract(W, [4], W, [2])
-            WW = permutedims(WW, (1,4,2,3,5,6))
-            WW = reshape(WW, (DL^2, d, DR^2, d)) # merging horizontal virtual legs from bottom to top
-            mpo2[i] = WW
-        end
-        return mpo2
-    else # square mpo requires too much storage
-        error("Maximal bond dimension D = $Dmax reached")
+
+    mpo2 = Vector{Any}(undef, L)
+    for i in (1:L)
+        W = mpo[i]
+        DL = size(W, 1)
+        DR = size(W, 3)
+        WW = contract(W, [4], W, [2])
+        WW = permutedims(WW, (1,4,2,3,5,6))
+        WW = reshape(WW, (DL^2, d, DR^2, d)) # merging horizontal virtual legs from bottom to top
+        mpo2[i] = WW
     end
+    
+    if D^2 > Dmax # maximal bond dimension reached
+        print("Bond dimension $(D^2) exceeds Dmax = $Dmax: truncation needed")
+        return nothing
+    end
+
+    return mpo2
 end
 
 
