@@ -8,6 +8,8 @@
 - Updated the add_mpo function, we store boundary mpo tensors always such that the respective last bond dimension equals 1, in that way all the 
   canonicalization and normalization functions work properly.
 
+- Implemented the rightcanonicalmpo method and the sitecanonicalmpo method which follows quickly
+
 # Messages Damiano:
 
 - 
