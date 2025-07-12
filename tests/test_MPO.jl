@@ -118,6 +118,7 @@ end
 
     # Left-canonicalize the MPO
     leftmpo = leftcanonicalmpo(mpo)
+
     for itL in 1:L
         W = leftmpo[itL]
         @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) # Checking the isometry property
@@ -136,6 +137,7 @@ end
 
     # Right-canonicalize the MPO
     rightmpo = rightcanonicalmpo(mpo)
+
     for itL in 1:L
         W = rightmpo[itL]
         @test contract(conj(W), [2,3,4], W, [2,3,4]) ≈ I(size(W, 1)) # Checking the isometry property

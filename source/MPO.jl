@@ -90,7 +90,7 @@ end
 
 
 """
-    mpo_to_full_tensor(mpo::Vector{<:AbstractArray{<:Number, 4}})
+    mpo_to_tensor(mpo::Vector{<:AbstractArray{<:Number, 4}})
 
 Converts an MPO to its full tensor representation.
 
@@ -105,17 +105,19 @@ Note: Note that the full tensor representation can only be computed efficiently 
 function mpo_to_tensor(mpo::Vector)
     L = length(mpo)
     T1 = mpo[1]
-    D1 = size(T1, 1)
-    d1 = size(T1, 2)
+
     for itL in 2:L
         T2 = mpo[itL]
+
+        # Local dimensions
+        D1 = size(T1, 1)
+        d1 = size(T1, 2)
         D2 = size(T2, 3)
         d2 = size(T2, 2)
+
         T1 = contract(T1, [3], T2, [1])
-        T1 = permutedims(T1, (1,2,4,3,5,6))
-        T1 = permutedims(T1, (1,2,3,5,4,6))
+        T1 = permutedims(T1, (1,2,4,5,3,6))
         T1 = reshape(T1, (D1, d1*d2, D2, d1*d2))
-        d1 = d1 * d2
     end
     return(T1)
 end
@@ -272,7 +274,7 @@ Returns:
 function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     L = length(mpo)
     leftmpo = deepcopy(mpo)
-    # left canonicalize site by site from left to right
+    # Left-canonicalize site by site from left to right
     for itL in 1:L-1
         U, S, Vd, _ = tensor_svd(leftmpo[itL], [1,2,4]; Nkeep = Nkeep, tolerance = tolerance)
         leftmpo[itL] = permutedims(U, (1,2,4,3))
@@ -298,11 +300,11 @@ Returns:
 function rightcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     L = length(mpo)
     rightmpo = deepcopy(mpo)
-    # right canonicalize site by site from right to left
+    # Right-canonicalize site by site from right to left
     for itL in L:-1:2
         U, S, Vd, _ = tensor_svd(rightmpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
         rightmpo[itL] = Vd
-        rightmpo[itL-1] = contract(rightmpo[itL-1], [3], U*Diagonal(S), [1])
+        rightmpo[itL-1] = permutedims(contract(rightmpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
     end
     return(rightmpo)
 end
