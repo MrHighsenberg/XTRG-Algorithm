@@ -1,5 +1,5 @@
 module MPO
-export xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
+export xychain_mpo, identity_mpo, mpo_to_full_tensor, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
