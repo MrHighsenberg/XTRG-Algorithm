@@ -1,5 +1,5 @@
 module MPO
-export xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo
+export xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
@@ -280,7 +280,7 @@ function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float
         leftmpo[itL] = permutedims(U, (1,2,4,3))
         leftmpo[itL+1] = contract(Diagonal(S)*Vd, [2], leftmpo[itL+1], [1])
     end
-    return(leftmpo)
+    return leftmpo
 end
 
 
@@ -306,7 +306,45 @@ function rightcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Floa
         rightmpo[itL] = Vd
         rightmpo[itL-1] = permutedims(contract(rightmpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
     end
-    return(rightmpo)
+    return rightmpo
+end
+
+
+"""
+    sitecanonicalmpo(mpo::Vector{<:AbstractArray{<:Number, 4}}, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+
+Returns the MPO in site-canonical form with respect to site l, where tensors to the left of site l
+are in left-canonical form and tensors to the right of site l are in right-canonical form.
+
+Parameters:
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
+- `l::Int`: Index of the orthogonality center
+- `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
+- `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
+
+Returns:
+- `canonical_mpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in site-canonical form.
+"""
+function sitecanonicalmpo(mpo::Vector, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    
+    L = length(mpo)
+
+    # Check validty of orthogonality center index
+    if l < 1 || l > L
+        error("Site index l must be between 1 and L=$L")
+    end
+    
+    # First apply left canonicalization to get everything in left-canonical form
+    canonical_mpo = leftcanonicalmpo(mpo; Nkeep = Nkeep, tolerance = tolerance)
+    
+    # Right-canonicalize tensors from site L to l+1
+    for itL in L:-1:l+1
+        U, S, Vd, _ = tensor_svd(canonical_mpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
+        canonical_mpo[itL] = Vd
+        canonical_mpo[itL-1] = permutedims(contract(canonical_mpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
+    end
+    
+    return canonical_mpo
 end
 
 end

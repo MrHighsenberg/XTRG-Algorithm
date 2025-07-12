@@ -2,7 +2,8 @@ using Test
 using LinearAlgebra
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo,
+            normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
 
 @testset "spinlocalspace" begin
     Splus, _, Id = spinlocalspace(1//2) 
@@ -144,4 +145,47 @@ end
     end
     @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(rightmpo) # Checking that both MPOs represent the same operator
     @test !(mpo[3][1,1,1,1] == rightmpo[3][1,1,1,1]) # but local tensors are different
+end
+
+@testset "sitecanonicalmpo" begin
+    L = 4
+    l = 3 # Choose orthogonality center at site 3
+
+    # Generate a random MPO
+    mpo = [rand(ComplexF64, 1, 6, 3, 6), rand(ComplexF64, 3, 4, 5, 4), rand(ComplexF64, 5, 2, 4, 2), rand(ComplexF64, 4, 3, 1, 3)]
+    
+    # Normalize the MPO 
+    normalize_mpo!(mpo)
+
+    # Site-canonicalize the MPO
+    sitempo = sitecanonicalmpo(mpo, l)
+
+    # Check left-canonical form for sites 1 to l-1
+    for itL in 1:l-1
+        W = sitempo[itL]
+        @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) # Checking the left-isometry property
+    end
+    
+    # Check right-canonical form for sites l+1 to L
+    for itL in l+1:L
+        W = sitempo[itL]
+        @test contract(conj(W), [2,3,4], W, [2,3,4]) ≈ I(size(W, 1)) # Checking the right-isometry property
+    end
+    
+    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(sitempo) # Checking that both MPOs represent the same operator
+    @test !(mpo[2][1,1,1,1] == sitempo[2][1,1,1,1]) # but local tensors are different
+    
+    # Test orthogonality center at first site
+    sitempo_first = sitecanonicalmpo(mpo, 1)
+    for itL in 2:L
+        W = sitempo_first[itL]
+        @test contract(conj(W), [2,3,4], W, [2,3,4]) ≈ I(size(W, 1))
+    end
+    
+    # Test orthogonality center at last site
+    sitempo_last = sitecanonicalmpo(mpo, L)
+    for itL in 1:L-1
+        W = sitempo_last[itL]
+        @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3))
+    end
 end
