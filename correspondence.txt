@@ -2,10 +2,9 @@
 
 - Thanks for the leftcanonicalmpo method! Looks good!
 
+- Have now also implemented mpo_normalize! which we will need after the linear initialization. Also now by construction the very last MPO tensor
+  in the chain becomes left-canonicalized as well.
+
 # Messages Damiano:
 
-- cleaned up / integrated the comments from your implementation ideas into the steps.
-
-- implemented a working leftcanonicalmpo with tests.
-
-- improved leftcanonicalmpo: now it only uses your tensor_svd function, without transforming mpo to mps. can soon delete leftcanonicalmpo_old
+- 

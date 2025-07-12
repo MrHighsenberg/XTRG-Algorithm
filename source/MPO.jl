@@ -238,8 +238,7 @@ function normalize_mpo!(mpo::Vector)
     # Normalize the MPO by distributing the weight    
     for i in 1:L
         mpo[i] .*= norm^(-1/L)
-    end
-    
+    end 
 end
 
 
