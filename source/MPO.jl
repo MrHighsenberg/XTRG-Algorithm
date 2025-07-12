@@ -1,5 +1,5 @@
 module MPO
-export xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
+export xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
@@ -269,17 +269,42 @@ Parameters:
 Returns:
 - `leftmpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in left-canonical form.
 """
-
 function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     L = length(mpo)
     leftmpo = deepcopy(mpo)
-    # left canonicalize site by site
+    # left canonicalize site by site from left to right
     for itL in 1:L-1
-        U, S, Vd, _ = tensor_svd(leftmpo[itL], [1,2,4]; Nkeep=Nkeep, tolerance=tolerance)
+        U, S, Vd, _ = tensor_svd(leftmpo[itL], [1,2,4]; Nkeep = Nkeep, tolerance = tolerance)
         leftmpo[itL] = permutedims(U, (1,2,4,3))
         leftmpo[itL+1] = contract(Diagonal(S)*Vd, [2], leftmpo[itL+1], [1])
     end
     return(leftmpo)
+end
+
+
+"""
+    rightcanonicalmpo(mpo::Vector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+
+Returns the MPO in right-canonical form.
+
+Parameters:
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
+- `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
+- `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
+
+Returns:
+- `rightmpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in right-canonical form.
+"""
+function rightcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    L = length(mpo)
+    rightmpo = deepcopy(mpo)
+    # right canonicalize site by site from right to left
+    for itL in L:-1:2
+        U, S, Vd, _ = tensor_svd(rightmpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
+        rightmpo[itL] = Vd
+        rightmpo[itL-1] = contract(rightmpo[itL-1], [3], U*Diagonal(S), [1])
+    end
+    return(rightmpo)
 end
 
 end

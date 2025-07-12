@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo
 
 @testset "spinlocalspace" begin
     Splus, _, Id = spinlocalspace(1//2) 
@@ -124,4 +124,22 @@ end
     end
     @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) # Checking that both MPOs represent the same operator
     @test !(mpo[3][1,1,1,1] == leftmpo[3][1,1,1,1]) # but local tensors are different
+end
+
+@testset "rightcanonicalmpo" begin
+    L = 4
+    # Generate a random MPO
+    mpo = [rand(ComplexF64, 1, 7, 2, 7), rand(ComplexF64, 2, 4, 5, 4), rand(ComplexF64, 5, 2, 6, 2), rand(ComplexF64, 6, 2, 1, 2)]
+    
+    # Normalize the MPO 
+    normalize_mpo!(mpo)
+
+    # Right-canonicalize the MPO
+    rightmpo = rightcanonicalmpo(mpo)
+    for itL in 1:L
+        W = rightmpo[itL]
+        @test contract(conj(W), [2,3,4], W, [2,3,4]) ≈ I(size(W, 1)) # Checking the isometry property
+    end
+    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(rightmpo) # Checking that both MPOs represent the same operator
+    @test !(mpo[3][1,1,1,1] == rightmpo[3][1,1,1,1]) # but local tensors are different
 end
