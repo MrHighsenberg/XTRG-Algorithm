@@ -139,18 +139,33 @@ Returns:
 Note: Assumes open boundary conditions and matching physical dimensions.
 """
 function add_mpo(A::Vector, B::Vector)
+
     L = length(A)
     C = Vector{Any}(undef, L)
+
     for i in 1:L
         d1, d2 = size(A[i], 2), size(A[i], 4)
         D1l, D1r = size(A[i], 1), size(A[i], 3)
         D2l, D2r = size(B[i], 1), size(B[i], 3)
         # New tensor with summed bond dimensions
-        C[i] = zeros(eltype(A[i]), D1l + D2l, d1, D1r + D2r, d2)
-        # Place the A block
-        C[i][1:D1l, :, 1:D1r, :] .= A[i]
-        # Place the B block
-        C[i][D1l+1:end, :, D1r+1:end, :] .= B[i]
+        if i == 1
+            # First site: trivial left bond dimension
+            C[i] = zeros(promote_type(eltype(A[i]), eltype(B[i])), 1, d1, D1r + D2r, d2)
+            C[i][1, :, 1:D1r, :] .= A[i][1, :, :, :]
+            C[i][1, :, D1r+1:end, :] .= B[i][1, :, :, :]
+        elseif i == L
+            # Last site: trivial right bond dimension
+            C[i] = zeros(promote_type(eltype(A[i]), eltype(B[i])), D1l + D2l, d1, 1, d2)
+            C[i][1:D1l, :, 1, :] .= A[i][:, :, 1, :]
+            C[i][D1l+1:end, :, 1, :] .= B[i][:, :, 1, :]
+        else
+            # Middle sites: block diagonal structure
+            C[i] = zeros(promote_type(eltype(A[i]), eltype(B[i])), D1l + D2l, d1, D1r + D2r, d2)
+            # Place the A block
+            C[i][1:D1l, :, 1:D1r, :] .= A[i]
+            # Place the B block
+            C[i][D1l+1:end, :, D1r+1:end, :] .= B[i]
+        end
     end
     return C
 end

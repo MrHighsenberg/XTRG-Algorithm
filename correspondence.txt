@@ -5,6 +5,9 @@
 - Have now also implemented mpo_normalize! which we will need after the linear initialization. Also now by construction the very last MPO tensor
   in the chain becomes left-canonicalized as well.
 
+- Updated the add_mpo function, we store boundary mpo tensors always such that the respective last bond dimension equals 1, in that way all the 
+  canonicalization and normalization functions work properly.
+
 # Messages Damiano:
 
 - 
