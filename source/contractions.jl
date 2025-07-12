@@ -155,7 +155,7 @@ end
 
 
 """
-    updateLeftEnv(V::Array{ComplexF64,3}, A::Array{ComplexF64,4}, B::Array{ComplexF64,4}, C::Array{ComplexF64,4})
+    updateLeftEnv(V::AbstractArray{<:Number, 3}, A::AbstractArray{<:Number, 4}, B::AbstractArray{<:Number, 4}, C::AbstractArray{<:Number, 4})
 
 Update function to compute the left environment V for given input tensors, in the following pattern,
 
@@ -170,8 +170,8 @@ Update function to compute the left environment V for given input tensors, in th
    '-----'
 
 Input:
-- `V::AbstractArray` (3-leg tensor): left environment of the current site.
-- `A::AbstractArray`, `B::AbstractArray`, `C::AbstractArray` (4-leg tensors): local MPO tensors. 
+- `V::AbstractArray{<:Number, 3}`: left environment of the current site.
+- `A::AbstractArray{<:Number, 4}`, `B::AbstractArray{<:Number, 4}`, `C::AbstractArray{<:Number, 4}`: local MPO tensors. 
     # leg ordering of each tensor: left bottom right top
 
 Output:
@@ -180,16 +180,16 @@ Output:
 function updateLeftEnv(V::AbstractArray, A::AbstractArray, B::AbstractArray, C::AbstractArray)
     # Checking dimensionality errors
     if ndims(V) != 3
-        error("In updateLeft, got parameter V with $(ndims(V)) dimensions. V must have 3 dimensions.")
+        error("In updateLeftEnv, got parameter V with $(ndims(V)) dimensions. V must have 3 dimensions.")
     end
     if ndims(A) != 4
-        error("In updateLeft, got parameter A with $(ndims(A)) dimensions. A must have 4 dimensions.")
+        error("In updateLeftEnv, got parameter A with $(ndims(A)) dimensions. A must have 4 dimensions.")
     end
     if ndims(B) != 4
-        error("In updateLeft, got parameter B with $(ndims(B)) dimensions. B must have 4 dimensions.")
+        error("In updateLeftEnv, got parameter B with $(ndims(B)) dimensions. B must have 4 dimensions.")
     end
     if ndims(C) != 4
-        error("In updateLeft, got parameter C with $(ndims(C)) dimensions. C must have 4 dimensions.")
+        error("In updateLeftEnv, got parameter C with $(ndims(C)) dimensions. C must have 4 dimensions.")
     end
 
     VA = contract(V, [3], A, [1])

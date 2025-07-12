@@ -1,9 +1,8 @@
 module MPO
-export xychain_mpo, identity_mpo, mpo_to_full_tensor, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
+export xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, leftcanonicalmpo, normalize_mpo!
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
-
 
 """
     spinlocalspace(spin::Rational=1//2)
@@ -48,7 +47,7 @@ Parameters:
 - `L::Int`: Length of the spin chain.
 - `J::Float64`: Coupling constant of the spin-spin interaction.
 Returns:
-- List of MPO tensors W[i] for sites i = 1,...,L.
+- List of MPO tensors W[i] for sites i = 1,...,L. # leg ordering: left bottom right top
 
 """
 function xychain_mpo(L::Int, J::Float64)
@@ -56,7 +55,7 @@ function xychain_mpo(L::Int, J::Float64)
     Sx = (Splus + Sminus) / (sqrt(2))
     Sy = (Splus - Sminus) / (1im * sqrt(2))
 
-    W = zeros(Complex{Float64}, 4, 2, 4, 2) # Ordering: left bottom right top
+    W = zeros(Complex{Float64}, 4, 2, 4, 2)
     W[1, :, 1, :] = Id
     W[2, :, 1, :] = Sx
     W[3, :, 1, :] = Sy
@@ -82,28 +81,28 @@ Parameters:
 - `d::Int`: Local Hilbert space dimension.
 
 Returns:
-- List of MPO tensors W[i] for sites i = 1,...,L.
+- List of MPO tensors W[i] for sites i = 1,...,L. # leg ordering: left bottom right top
 """
 function identity_mpo(L::Int, d::Int=2)
-    W = reshape(Matrix{Float64}(I, d, d), 1, d, 1, d) # Ordering: left bottom right top
+    W = reshape(Matrix{Float64}(I, d, d), 1, d, 1, d)
     return [W for _ in 1:L]
 end
 
 
 """
-    mpo_to_full_tensor(mpo::Vector)
+    mpo_to_full_tensor(mpo::Vector{<:AbstractArray{<:Number, 4}})
 
 Converts an MPO to its full tensor representation.
 
 Parameters:
-- `mpo::Vector`: List of MPO tensors.
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors.
 
 Returns:
-- `T1::Array`: Full tensor representation of the MPO.
+- `T1::AbstractArray{<:Number, 4}`: Full tensor representation of the MPO.
 
 Note: Note that the full tensor representation can only be computed efficiently for small chain lengths.
 """
-function mpo_to_full_tensor(mpo::Vector)
+function mpo_to_tensor(mpo::Vector)
     L = length(mpo)
     T1 = mpo[1]
     D1 = size(T1, 1)
@@ -123,7 +122,7 @@ end
 
 
 """
-    add_mpo(A::Vector, B::Vector)
+    add_mpo(A::Vector{<:AbstractArray{<:Number, 4}}, B::Vector{<:AbstractArray{<:Number, 4}})
 
 Adds two MPOs A and B with the same physical dimensions but possibly different bond dimensions.
 
@@ -131,12 +130,11 @@ The function constructs a new MPO whose local tensors are block-diagonal combina
 increasing the bond dimension as needed. The resulting MPO represents the operator sum A + B.
 
 Parameters:
-- `A::Vector`: List of MPO tensors for the first operator.
-- `B::Vector`: List of MPO tensors for the second operator.
+- `A::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors for the first operator.
+- `B::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors for the second operator.
 
 Returns:
-- `C::Vector`: List of MPO tensors representing the sum A + B.
-
+- `C::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors representing the sum A + B.
 
 Note: Assumes open boundary conditions and matching physical dimensions.
 """
@@ -159,15 +157,16 @@ end
 
 
 """
-    square_mpo(mpo::Vector, Dmax::Int)
+    square_mpo(mpo::Vector{<:AbstractArray{<:Number, 4}}, Dmax::Int)
 
 Returns mpo2 as an MPO representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
 
 Parameters:
-- `mpo::Vector{Array{ComplexF64, 4}}`: the mpo representing the operator to be squared, # leg ordering for each tensor: left bottom right top
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: the mpo representing the operator to be squared, # leg ordering for each tensor: left bottom right top
 - `Dmax::Int`: maximal bond dimension of output mpo
+
 Returns:
-- `mpo2::Vector{Array{ComplexF64, 4}}`: the mpo representing the squared operator if maximal bond dimension is not exceeded (else return mpo)
+- `mpo2::Vector{<:AbstractArray{<:Number, 4}}`: the mpo representing the squared operator if maximal bond dimension is not exceeded (else return mpo)
 
 """
 function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
@@ -196,16 +195,16 @@ end
 
 
 """
-    normalize_mpo!(mpo::Vector)
+    normalize_mpo!(mpo::Vector{<:AbstractArray{<:Number, 4}})
 
 Normalizes an MPO in-place by distributing the normalization weight across all tensors.
 Uses the updateLefEnv function to iteratively contract the MPO tensors to compute the Frobenius norm.
 
 Parameters:
-- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors 
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors 
 
 Returns:
-- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of normalized MPO tensors 
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of normalized MPO tensors 
 
 """
 function normalize_mpo!(mpo::Vector)
@@ -243,17 +242,17 @@ end
 
 
 """
-    leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    leftcanonicalmpo(mpo::Vector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
 
-Returns mpo in left-canonical form.
+Returns the MPO in left-canonical form.
 
 Parameters:
-- `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
 
 Returns:
-- `leftmpo::Vector`: mpo in left-canonical form.
+- `leftmpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in left-canonical form.
 """
 
 function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
@@ -267,93 +266,5 @@ function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float
     end
     return(leftmpo)
 end
-
-# #### LATER DISCARD FROM HERE
-
-# """
-# Copying below here svd and svdleft for MPS tensors, copying from lecture
-
-# """
-
-# function svd(
-#     T::AbstractArray{<:Number}, indicesU::AbstractVector{Int};
-#     Nkeep::Int=typemax(Int), tolerance::Float64=0.0
-# )
-#     if isempty(T)
-#         return (zeros(0, 0), zeros(0), zeros(0, 0), 0.0)
-#     end
-
-#     indicesV = setdiff(1:ndims(T), indicesU)
-#     Tmatrix = reshape(
-#         permutedims(T, cat(dims=1, indicesU, indicesV)),
-#         (prod(size(T)[indicesU]), prod(size(T)[indicesV]))
-#     )
-#     svdT = LinearAlgebra.svd(Tmatrix)
-
-#     Nkeep = min(Nkeep, size(svdT.S, 1))
-#     Ntolerance = findfirst(svdT.S .< tolerance)
-#     if !isnothing(Ntolerance)
-#         Nkeep = min(Nkeep, Ntolerance - 1)
-#     end
-
-#     U = reshape(svdT.U[:, 1:Nkeep], size(T)[indicesU]..., Nkeep)
-#     S = svdT.S[1:Nkeep]
-#     Vd = reshape(svdT.Vt[1:Nkeep, :], Nkeep, size(T)[indicesV]...)
-#     discardedweight = sum(svdT.S[Nkeep+1:end] .^ 2)
-
-#     return (U, S, Vd, discardedweight)
-# end
-# function svdleft(
-#     T::AbstractArray{<:Number};
-#     Nkeep::Int=typemax(Int), tolerance::Float64=0.0
-# )
-#     U, S, Vd, _ = svd(T, collect(1:ndims(T)-1), Nkeep=Nkeep, tolerance=tolerance)
-#     return U, Diagonal(S) * Vd
-# end
-
-
-# """
-#     leftcanonicalmpo_old(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
-
-# Returns mpo in left-canonical form.
-
-# Parameters:
-# - `mpo::AbstractVector{<:AbstractArray{<:Number, 4}}`: List of MPO tensor
-# - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
-# - `tolerance::Float64`: minimum magnitude of singular value to keep. Default is `0.0`.
-
-# Returns:
-# - `leftmpo::Vector`: mpo in left-canonical form.
-# """
-# function leftcanonicalmpo_old(mpo::AbstractVector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
-#     L = length(mpo)
-#     mps = []
-#     #transform mpo to an mps by fusing physical legs
-#     for itL in 1:L
-#         W = permutedims(mpo[itL], (1,2,4,3))
-#         Dleft = size(W,1)
-#         Dright = size(W,4)
-#         d = size(W,2)
-#         push!(mps, reshape(W, (Dleft, d^2, Dright)))
-#     end
-#     #left canonicalize the mps in place (copying from lecture. i later realized we could simply use tensor_svd and avoid using mps at all.)
-#     for itL in 1:L-1
-#         A, Lambda = svdleft(mps[itL]; Nkeep=Nkeep, tolerance=tolerance)
-#         mps[itL] = A
-#         mps[itL+1] = contract(Lambda, [2], mps[itL+1], [1])
-#     end
-#     #transform left canonicalized mps to left canonicalized mpo
-#     leftmpo = []
-#     for itL in 1:L
-#         M = mps[itL]
-#         Dleft = size(M,1)
-#         Dright = size(M,3)
-#         d = Int(sqrt(size(M, 2)))
-#         push!(leftmpo, permutedims(reshape(M, (Dleft, d, d, Dright)), (1,2,4,3)))
-#     end
-#     return(leftmpo)
-# end
-
-# #### LATER DISCARD UP TO HERE
 
 end
