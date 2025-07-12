@@ -56,20 +56,7 @@ end
     end
 end
 
-@testset "square_mpo" begin
-    L = 3
-    D = 10
-    d = 10
-    mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
-    mpo2 = square_mpo(mpo, D^2)
-    mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
-    mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
-    @test mat1 ≈ mat2
-end
-
-@testset "leftcanonicalmpo" begin
-
-    function mpo_to_tensor(mpo)
+function mpo_to_tensor(mpo)
         L = length(mpo)
         T1 = mpo[1]
         D1 = size(T1, 1)
@@ -87,12 +74,25 @@ end
         return(T1)
     end
 
+@testset "square_mpo" begin
+    L = 3
+    D = 10
+    d = 10
+    mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
+    mpo2 = square_mpo(mpo, D^2)
+    mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
+    mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
+    @test mat1 ≈ mat2
+end
+
+@testset "leftcanonicalmpo" begin
+
     L = 4
     # Generate random mpo and left-canonicalize it
     mpo = [rand(ComplexF64, 3, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 2, 2)]
 
     leftmpo = leftcanonicalmpo(mpo)
-    for itL in 1:L-1 # Only test for sites 1 to L-1 (left-canonical sites)
+    for itL in 1:L # Only test for sites 1 to L-1 (left-canonical sites)
         W = leftmpo[itL]
         @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) # Checking the isometry property
     end
