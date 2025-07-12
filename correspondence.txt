@@ -1,8 +1,6 @@
 # Messages Matthias:
 
-- For the implementation of the contraction for the Frobenius norm, we can use the updateLeftEnv function with trivial tensors C and B.
-
-- I have finished the code for the updateLeftEnv and tensor_svd function and added some unit tests for them.
+- Thanks for the leftcanonicalmpo method! Looks good!
 
 # Messages Damiano:
 

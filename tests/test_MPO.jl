@@ -1,9 +1,8 @@
 using Test
 using LinearAlgebra
-include("../source/contractions.jl")
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo, leftcanonicalmpo_old
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, add_mpo, square_mpo, leftcanonicalmpo
 
 @testset "spinlocalspace" begin
     Splus, _, Id = spinlocalspace(1//2) 
@@ -86,17 +85,16 @@ end
     @test mat1 ≈ mat2
 end
 
-@testset "left canonical MPO form" begin
+@testset "leftcanonicalmpo" begin
     L = 4
-    #generate random mpo and left-canonicalize it
+    # Generate random mpo and left-canonicalize it
     mpo = [rand(ComplexF64, 3, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 2, 2)]
-    #leftmpo = leftcanonicalmpo_old(mpo) # for testing older version of leftcanonicalmpo
-    leftmpo = leftcanonicalmpo(mpo)
-    for itL in 1:L-1  # Only test for sites 1 to L-1 (left-canonical sites)
-        W = leftmpo[itL]
-        @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) #checking the isometry property
-    end
-    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) #checking that mpo and leftmpo represent the same operator...
-    @test !(mpo[3][1,1,1,1] == leftmpo[3][1,1,1,1]) #...but are different
-end
 
+    leftmpo = leftcanonicalmpo(mpo)
+    for itL in 1:L-1 # Only test for sites 1 to L-1 (left-canonical sites)
+        W = leftmpo[itL]
+        @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3)) # Checking the isometry property
+    end
+    @test mpo_to_tensor(mpo) ≈ mpo_to_tensor(leftmpo) # Checking that mpo and leftmpo represent the same operator
+    @test !(mpo[3][1,1,1,1] == leftmpo[3][1,1,1,1]) # but local tensors are different
+end
