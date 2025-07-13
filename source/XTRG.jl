@@ -17,13 +17,14 @@ Parameters:
 - `Nsweeps::Int`: Number of sweeps performed in the variational DMRG-type optimization along one direction of the chain.
 - `convergence::Float64`: Threshold value for which the locally optimized tensor rho_new is assumed converged.
 - `alpha::Float64`: Multiplication factor for the increment of the maximal bond dimension. 
+- `Dmax::Int`: Maximal bond dimension cutoff of the updated state.
 - `tolerance::Float64`: Minimum magnitude of singular values to keep in the SVD.
 
 Returns:
 - `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new. 
 """
-function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, alpha::Float64=1.1, tolerance::Float64=0.0)
+function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, alpha::Float64=1.1, tolerance::Float64=0.0, Dmax::Int=100)
 
     # Extract chain length for sweeping
     L = length(rho)
@@ -37,7 +38,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     # Maximal bond dimension increased by multiplication factor alpha
     D = max(maximum([size(tensor, 1) for tensor in rho]), maximum([size(tensor, 3) for tensor in rho]))
-    Nkeep = Int(round(alpha * D))
+    Nkeep = min(Int(round(alpha * D)), Dmax)
 
     # # # Choose initialization mode # # #
     if square == true
