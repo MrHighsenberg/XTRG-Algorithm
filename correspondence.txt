@@ -8,11 +8,12 @@
 - Updated the add_mpo function, we store boundary mpo tensors always such that the respective last bond dimension equals 1, in that way all the 
   canonicalization and normalization functions work properly.
 
-- Implemented the rightcanonicalmpo method and the sitecanonicalmpo method which follows quickly
+- Implemented the rightcanonicalmpo method and the sitecanonicalmpo method which follows quickly.
 
-- Implemented a provisional version of the XTRG update function
+- Implemented a provisional version of the XTRG update function.
 
-- If you have some time, please keep working on the powerpoint by also integrating the relevant formula and figures from the paper
+- If you have some time, please keep working on the powerpoint by also integrating the relevant formula and figures from the paper. We have only 
+have four more days left to get the presentation finished.
 
 # Messages Damiano:
 
