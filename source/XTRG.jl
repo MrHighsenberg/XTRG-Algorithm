@@ -2,7 +2,7 @@ module XTRG
 export XTRG_algorithm
 
 """
-    XTRG_step(rho::Vector, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
+    XTRG_update(rho::Vector, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
 
 Function performing a single update of the XTRG algorithm from inverse temperatures beta ---> 2*beta
 
@@ -17,7 +17,7 @@ Output:
 - `rho_new::Vector`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new. 
 """
-function XTRG_step(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, tolerance::Float64=1e-10)
+function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, tolerance::Float64=1e-10)
 
     beta += beta
 
