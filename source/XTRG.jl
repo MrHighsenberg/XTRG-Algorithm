@@ -1,5 +1,7 @@
 module XTRG
 export XTRG_update, XTRG_algorithm
+include("../source/contractions.jl")
+import .contractions: contract, tensor_svd, updateLeftEnv
 
 """
     XTRG_update(rho::Vector{<:AbstractArray{<:Number, 4}}, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
@@ -11,18 +13,27 @@ Parameters:
 - `beta::Float64`: Current inverse temperature of the input state rho.
 - `square::Bool`: If boolean is true initialize the updated rho as the square of rho
 - `Nsweeps::Int`: Number of sweeps performed in the variational DMRG-type optimization along one direction of the chain.
-- `tolerance::Float64`: Threshold value for which the locally optimized tensor rho_new is assumed converged.
+- `convergence::Float64`: Threshold value for which the locally optimized tensor rho_new is assumed converged.
+- `Nkeep::Int`: Maximal number of singular values to keep in the SVD of the variational two-site update.
+- `tolerance::Float64`: Minimum magnitude of singular value to keep in the SVD of the variational two-site update.
 
 Returns:
 - `rho_new::Vector{<:AbstractArray{<:Number, 4}}`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new. 
 """
-function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, tolerance::Float64=1e-10)
+function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, Nkeep::Int=200, tolerance::Float64=0.0)
+
+    # Extract chain length for sweeping
+    L = length(rho)
+
+    if L < 2
+        error("ERR: chain is too short.")
+    end
 
     # Double the inverse temperature
     beta += beta
 
-    # Choose initialization mode
+    # # # Choose initialization mode # # #
     if square == true
         rho_init = square_mpo(rho)
     else
@@ -31,8 +42,43 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, t
 
     rho2 = deepcopy(rho_init)
     
-    # Variational DMRG-type sweeping 
-    
+    # # # Variational DMRG-type sweeping # # #
+
+    # Storage of environments
+    Vlr = Vector{Array{ComplexF64, 3}}(undef, L+2)
+
+    # Compute all left environments 
+    Vlr[1] = reshape([1], 1, 1, 1)
+    Vlr[end] = reshape([1], 1, 1, 1)
+
+    for itL in 1:L
+        Vlr[itL+1] = updateLeftEnv(Vlr[itL], rho[itL], rho[itL], rho2[itL])
+    end
+
+    for itS in 1:Nsweeps
+         
+        # sweeping: right -> left
+        for itL = L:-1:2
+            rightEnv = contract(Vlr[itL+2], [3], rho[itL], [3])
+            rightEnv = contact(rightEnv, [2,4], rho[itL], [3,4])
+
+            leftEnv = contract(Vlr[itL-1], [3], rho[itL-1], [1])
+            leftEnv = contract(leftEnv, [2,3], rho[itL-1], [1,4])
+
+            rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,2,5,4,3,6])
+
+            # Perform SVD on updated two-site tensor 
+            U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
+            rho2[itL] = Vd 
+            rho2[itL-1] = permutedims(U*Diagonal(S), (1,2,4,3))
+        end 
+
+        # sweeping: left -> right
+        for itL = 1:(L-1)
+
+        end
+
+    end
 
     # Evaluate whether the optimization has sufficiently converged
     rho2_diff = add_mpo(rho2, [-rho2_new[1], rho2_new[2:end]])
