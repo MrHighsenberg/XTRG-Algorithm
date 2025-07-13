@@ -1,5 +1,5 @@
 module MPO
-export xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
+export xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
@@ -85,6 +85,24 @@ Returns:
 """
 function identity_mpo(L::Int, d::Int=2)
     W = reshape(Matrix{Float64}(I, d, d), 1, d, 1, d)
+    return [W for _ in 1:L]
+end
+
+
+"""
+    zero_mpo(L::Int, d::Int)
+
+Generates the MPO representation of the L-site zero operator.
+
+Parameters:
+- `L::Int`: Length of the spin chain.
+- `d::Int`: Local Hilbert space dimension.
+
+Returns:
+- List of MPO tensors W[i] for sites i = 1,...,L. # leg ordering: left bottom right top
+"""
+function zero_mpo(L::Int, d::Int=2)
+    W = zeros(Float64, 1, d, 1, d)
     return [W for _ in 1:L]
 end
 
@@ -202,14 +220,6 @@ function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
         WW = reshape(WW, (DL^2, d, DR^2, d)) # Merging horizontal virtual legs from bottom to top
         mpo2[i] = WW
     end
-    
-    if D^2 > Dmax # Maximal bond dimension reached
-        print("Bond dimension $(D^2) exceeds Dmax = $Dmax: truncation performed")
-
-        # # # Here some sort of truncation needs to be implemented
-        
-    end
-
     return mpo2
 end
 

@@ -3,7 +3,7 @@ export XTRG_update, XTRG_algorithm
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
-import .MPO: add_mpo, square_mpo, normalize_mpo!
+import .MPO: zero_mpo, add_mpo, square_mpo, normalize_mpo!
 
 """
     XTRG_update(rho::Vector{<:AbstractArray{<:Number, 4}}, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
@@ -16,14 +16,14 @@ Parameters:
 - `square::Bool`: If boolean is true initialize the updated rho as the square of rho
 - `Nsweeps::Int`: Number of sweeps performed in the variational DMRG-type optimization along one direction of the chain.
 - `convergence::Float64`: Threshold value for which the locally optimized tensor rho_new is assumed converged.
-- `Nkeep::Int`: Maximal number of singular values to keep in the SVD of the variational two-site update.
-- `tolerance::Float64`: Minimum magnitude of singular value to keep in the SVD of the variational two-site update.
+- `alpha::Float64`: Multiplication factor for the increment of the maximal bond dimension. 
+- `tolerance::Float64`: Minimum magnitude of singular values to keep in the SVD.
 
 Returns:
 - `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new. 
 """
-function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, Nkeep::Int=200, tolerance::Float64=0.0)
+function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, alpha::Float64=1.1, tolerance::Float64=0.0)
 
     # Extract chain length for sweeping
     L = length(rho)
@@ -35,11 +35,18 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
     # Double the inverse temperature
     beta += beta
 
+    # Maximal bond dimension increased by multiplication factor alpha
+    D = max(maximum([size(tensor, 1) for tensor in rho]), maximum([size(tensor, 3) for tensor in rho]))
+    Nkeep = Int(round(alpha * D))
+
     # # # Choose initialization mode # # #
     if square == true
         rho_init = square_mpo(rho)
     else
-        rho_init = rho
+        rho_init = deepcopy(rho)
+        for _ in 1:Nkeep
+            rho_init = add_mpo(rho_init, zero_mpo(L))
+        end
     end
 
     # Compute adjoint initial state for optimization
@@ -49,7 +56,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     print("# # # Started Variational Optimization # # #\n")
     print("Temperature update: $beta ---> $(2*beta)")
-    print("# of sites = $L | square mode = $square | # of sweeps = $Nsweep x 2\n | convergence = $convergence | Nkeep = $Nkeep | tolerance = $tolerance")
+    print("# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2\n | convergence = $convergence | Nkeep = $Nkeep | tolerance = $tolerance")
 
     # Storage for the environments
     Vlr = Vector{Array{ComplexF64, 3}}(undef, L+2)
@@ -119,10 +126,8 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
     rho2 = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
 
     # Evaluate whether the optimization has sufficiently converged
-    if square == true
-        norm = normalize_mpo!(add_mpo(rho_init, [-rho2[1], rho2[2:end]]))
-        println("Convergence successful: $((norm^2) < convergence)")
-    end
+    norm = normalize_mpo!(add_mpo(square_mpo(rho), [-rho2[1], rho2[2:end]]))
+    println("Convergence successful: $((norm^2) < convergence)")
 
     return rho2, beta
 

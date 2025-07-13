@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, mpo_to_tensor, add_mpo, square_mpo,
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo,
             normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
 
 @testset "spinlocalspace" begin
@@ -40,6 +40,13 @@ end
     id_mpo = identity_mpo(2, d)
     id_matrix = two_site_mpo_to_matrix(id_mpo, d)
     @test id_matrix ≈ I(d^2)
+end
+
+@testset "zero_mpo" begin
+    d = 8
+    zeros_mpo = zero_mpo(2, d)
+    zeros_matrix = two_site_mpo_to_matrix(zeros_mpo, d)
+    @test zeros_matrix ≈ zeros(d^2, d^2)
 end
 
 @testset "add_mpo" begin
