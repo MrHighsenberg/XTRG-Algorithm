@@ -44,13 +44,17 @@ end
 
 
 """
-    ..... = XTRG_algorithm(....)
+    XTRG_algorithm(L::Int, beta0::Float64, betamax::Float64)
+
+Function executing the XTRG algorithm to simulate the XY-Hamiltonian for a spin-1/2 system over a given temperature range.
 
 Parameters:
-- ...
-- ...
+- `L::Int`: length of the one-dimensional spin-1/2 system.
+- `beta0::Float64`: initial inverse temperature to start the XTRG algorithm.
+- `betamax::Float64`: maximal inverse temperature at which the XTRG algorithm is stopped.
+
 Returns:
-- `rho::Vector{Array{ComplexF64, 4}}`: the mpo representing the unnormalized thermal state
+- `rhos::Dict{Float64, Vector{Array{ComplexF64, 4}}}`: The MPOs for different thermal states
 
 """
 function XTRG_algorithm(beta0::Float64=1e-6, betamax::Float64=1e+14, rho0::Vector)
