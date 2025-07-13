@@ -65,11 +65,12 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
          
         # sweeping: right ---> left
         for itL = L:-1:2
-            rightEnv = contract(Vlr[itL+2], [3], rho[itL], [3])
-            rightEnv = contact(rightEnv, [2,4], rho[itL], [3,4])
 
             leftEnv = contract(Vlr[itL-1], [3], rho[itL-1], [1])
             leftEnv = contract(leftEnv, [2,3], rho[itL-1], [1,4])
+
+            rightEnv = contract(Vlr[itL+2], [3], rho[itL], [3])
+            rightEnv = contract(rightEnv, [2,4], rho[itL], [3,4])
 
             rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,3,6,4,2,5]) 
 
@@ -78,7 +79,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
             rho2[itL] = Vd 
             rho2[itL-1] = permutedims(U*Diagonal(S), (1,2,4,3))
 
-            # Update right environment for next step
+            # Update right environment for next site
             Vlr[itL+1] = updateLeftEnv(permutedims(Vlr[itL+2], (3,2,1,4)), permutedims(rho[itL], (3,2,1,4)),
                             permutedims(rho[itL], (3,2,1,4)), permutedims(rho2[itL], (3,2,1,4)))
 
@@ -89,6 +90,22 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
         # sweeping: left ---> right
         for itL = 1:(L-1)
+
+            leftEnv = contract(Vlr[itL], [3], rho[itL], [1])
+            leftEnv = contract(leftEnv, [2,3], rho[itL], [1,4])
+
+            rightEnv = contract(Vlr[itL+3], [3], rho[itL+1], [3])
+            rightEnv = contact(rightEnv, [2,4], rho[itL+1], [3,4])
+
+            rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,3,6,4,2,5]) 
+
+            # Update two-site tensor via tensor SVD
+            U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
+            rho2[itL] = permutedims(U, (1,2,4,3)) 
+            rho2[itL+1] = Diagonal(S)*Vd
+
+            # Update left environment for next site
+            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], rho2[itL])
 
         end
 
