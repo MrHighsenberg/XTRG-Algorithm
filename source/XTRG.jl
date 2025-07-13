@@ -3,6 +3,7 @@ export XTRG_update, XTRG_algorithm
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
+import .MPO: add_mpo, square_mpo, normalize_mpo!
 
 """
     XTRG_update(rho::Vector{<:AbstractArray{<:Number, 4}}, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
@@ -19,7 +20,7 @@ Parameters:
 - `tolerance::Float64`: Minimum magnitude of singular value to keep in the SVD of the variational two-site update.
 
 Returns:
-- `rho_new::Vector{<:AbstractArray{<:Number, 4}}`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
+- `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new. 
 """
 function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, Nkeep::Int=200, tolerance::Float64=0.0)
@@ -114,13 +115,16 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     end
 
-    # Evaluate whether the optimization has sufficiently converged
-    rho2_diff = add_mpo(rho2, [-rho2_new[1], rho2_new[2:end]])
-
     # Complex conjugate and transpose to retrieve result
-    rho2_new = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
+    rho2 = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
 
-    return rho2_new, beta
+    # Evaluate whether the optimization has sufficiently converged
+    if square == true
+        norm = normalize_mpo!(add_mpo(rho_init, [-rho2[1], rho2[2:end]]))
+        println("Convergence successful: $((norm^2) < convergence)")
+    end
+
+    return rho2, beta
 
 end
 

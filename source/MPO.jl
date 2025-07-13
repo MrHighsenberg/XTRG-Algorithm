@@ -187,6 +187,8 @@ Returns:
 
 """
 function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
+
+    # # # # to be modified, maybe need deepcopy
     L = length(mpo)
     d = size(mpo[1], 2) # assume local dimension equal at all sites
     D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # maximal bond dimension across all W tensors
@@ -221,7 +223,7 @@ Parameters:
 - `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors 
 
 Returns:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of normalized MPO tensors 
+- `norm::Float64`: Norm of the unnormalized input MPO
 
 """
 function normalize_mpo!(mpo::Vector)
@@ -255,6 +257,7 @@ function normalize_mpo!(mpo::Vector)
     for i in 1:L
         mpo[i] .*= norm^(-1/L)
     end 
+    return norm
 end
 
 
