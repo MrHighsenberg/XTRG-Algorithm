@@ -1,5 +1,6 @@
 module XTRG
 export XTRG_update, XTRG_algorithm
+using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
 
@@ -45,6 +46,10 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
     
     # # # Variational DMRG-type sweeping # # #
 
+    print("# # # Started Variational Optimization # # #\n")
+    print("Temperature update: $beta ---> $(2*beta)")
+    print("# of sites = $L | square mode = $square | # of sweeps = $Nsweep x 2\n | convergence = $convergence | Nkeep = $Nkeep | tolerance = $tolerance")
+
     # Storage for the environments
     Vlr = Vector{Array{ComplexF64, 3}}(undef, L+2)
 
@@ -68,20 +73,27 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
             rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,3,6,4,2,5]) 
 
-            # Update two-site tensor via SVD
+            # Update two-site tensor via tensor SVD
             U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
             rho2[itL] = Vd 
             rho2[itL-1] = permutedims(U*Diagonal(S), (1,2,4,3))
 
             # Update right environment for next step
-            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], rho2[itL])
+            Vlr[itL+1] = updateLeftEnv(permutedims(Vlr[itL+2], (3,2,1,4)), permutedims(rho[itL], (3,2,1,4)),
+                            permutedims(rho[itL], (3,2,1,4)), permutedims(rho2[itL], (3,2,1,4)))
 
         end 
+
+        # Display information of the right-left sweep
+        print("Completed right-left sweep $itS / $Nsweeps")
 
         # sweeping: left ---> right
         for itL = 1:(L-1)
 
         end
+
+        # Display information of the left-right sweep
+        print("Completed left-right sweep $itS / $Nsweeps")
 
     end
 
