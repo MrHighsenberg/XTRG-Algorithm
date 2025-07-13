@@ -10,6 +10,10 @@
 
 - Implemented the rightcanonicalmpo method and the sitecanonicalmpo method which follows quickly
 
+- Implemented a provisional version of the XTRG update function
+
+- If you have some time, please keep working on the powerpoint by also integrating the relevant formula and figures from the paper
+
 # Messages Damiano:
 
 - 

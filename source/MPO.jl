@@ -179,7 +179,7 @@ end
 Returns mpo2 as an MPO representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: the mpo representing the operator to be squared, # leg ordering for each tensor: left bottom right top
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: the mpo representing the operator to be squared, # leg ordering: left bottom right top
 - `Dmax::Int`: maximal bond dimension of output mpo
 
 Returns:
@@ -188,10 +188,9 @@ Returns:
 """
 function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
 
-    # # # # to be modified, maybe need deepcopy
     L = length(mpo)
-    d = size(mpo[1], 2) # assume local dimension equal at all sites
-    D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # maximal bond dimension across all W tensors
+    d = size(mpo[1], 2) # Assume local dimension equal at all sites
+    D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # Maximal bond dimension across all W tensors
 
     mpo2 = Vector{Any}(undef, L)
     for i in (1:L)
@@ -200,13 +199,15 @@ function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
         DR = size(W, 3)
         WW = contract(W, [4], W, [2])
         WW = permutedims(WW, (1,4,2,3,5,6))
-        WW = reshape(WW, (DL^2, d, DR^2, d)) # merging horizontal virtual legs from bottom to top
+        WW = reshape(WW, (DL^2, d, DR^2, d)) # Merging horizontal virtual legs from bottom to top
         mpo2[i] = WW
     end
     
-    if D^2 > Dmax # maximal bond dimension reached
-        print("Bond dimension $(D^2) exceeds Dmax = $Dmax: truncation needed")
-        return nothing
+    if D^2 > Dmax # Maximal bond dimension reached
+        print("Bond dimension $(D^2) exceeds Dmax = $Dmax: truncation performed")
+
+        # # # Here some sort of truncation needs to be implemented
+        
     end
 
     return mpo2
