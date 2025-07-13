@@ -40,14 +40,15 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
         rho_init = rho
     end
 
-    rho2 = deepcopy(rho_init)
+    # Compute adjoint initial state for optimization
+    rho2 = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho_init]
     
     # # # Variational DMRG-type sweeping # # #
 
-    # Storage of environments
+    # Storage for the environments
     Vlr = Vector{Array{ComplexF64, 3}}(undef, L+2)
 
-    # Compute all left environments 
+    # Compute left and right environments 
     Vlr[1] = reshape([1], 1, 1, 1)
     Vlr[end] = reshape([1], 1, 1, 1)
 
@@ -57,7 +58,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     for itS in 1:Nsweeps
          
-        # sweeping: right -> left
+        # sweeping: right ---> left
         for itL = L:-1:2
             rightEnv = contract(Vlr[itL+2], [3], rho[itL], [3])
             rightEnv = contact(rightEnv, [2,4], rho[itL], [3,4])
@@ -65,15 +66,19 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
             leftEnv = contract(Vlr[itL-1], [3], rho[itL-1], [1])
             leftEnv = contract(leftEnv, [2,3], rho[itL-1], [1,4])
 
-            rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,2,5,4,3,6])
+            rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,3,6,4,2,5]) 
 
-            # Perform SVD on updated two-site tensor 
+            # Update two-site tensor via SVD
             U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
             rho2[itL] = Vd 
             rho2[itL-1] = permutedims(U*Diagonal(S), (1,2,4,3))
+
+            # Update right environment for next step
+            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], rho2[itL])
+
         end 
 
-        # sweeping: left -> right
+        # sweeping: left ---> right
         for itL = 1:(L-1)
 
         end
@@ -82,6 +87,9 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     # Evaluate whether the optimization has sufficiently converged
     rho2_diff = add_mpo(rho2, [-rho2_new[1], rho2_new[2:end]])
+
+    # Complex conjugate and transpose to retrieve result
+    rho2_new = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
 
     return rho2_new, beta
 
