@@ -11,30 +11,29 @@ import .MPO: zero_mpo, add_mpo, square_mpo, normalize_mpo!
 Function performing a single update of the XTRG algorithm from inverse temperatures beta ---> 2*beta
 
 Parameters:
-- `rho::Vector{<:AbstractArray{<:Number, 4}}`: List of the (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature beta.
+- `rho::Vector{<:AbstractArray{<:Number, 4}}`: List of canonicalized MPO tensors corresponding to the normalized quantum state at inverse temperature beta.
 - `beta::Float64`: Current inverse temperature of the input state rho.
-- `square::Bool`: If boolean is true initialize the updated rho as the square of rho
+- `square::Bool`: If true the updated rho is initialized as the square of rho, otherwise increase bond dimension by padding with zeros.
 - `Nsweeps::Int`: Number of sweeps performed in the variational DMRG-type optimization along one direction of the chain.
-- `convergence::Float64`: Threshold value for which the locally optimized tensor rho_new is assumed converged.
-- `alpha::Float64`: Multiplication factor for the increment of the maximal bond dimension. 
-- `Dmax::Int`: Maximal bond dimension cutoff of the updated state.
-- `tolerance::Float64`: Minimum magnitude of singular values to keep in the SVD.
+- `convergence::Float64`: Threshold value for which the locally optimized tensor rho2 is assumed converged.
+- `alpha::Float64`: Multiplication factor for the increment of the maximal bond dimension at each XTRG update.
+- `Dmax::Int`: Total maximal bond dimension cutoff of the updated state across all temperatures.
+- `tolerance::Float64`: Minimum magnitude of singular values to keep in the SVD during optimization.
 
 Returns:
-- `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of (canonicalized) local tensors of the MPO corresponding to the quantum state at inverse temperature 2*beta.
-- `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new. 
+- `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of canonicalized MPO tensors corresponding to the normalized quantum state at inverse temperature 2*beta.
+- `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new.
+
+Note: The normalized input state is expected to be in site-canonical form with orthogonality center at site length(rho)-1.
 """
-function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, alpha::Float64=1.1, tolerance::Float64=0.0, Dmax::Int=100)
-
-    # Extract chain length for sweeping
-    L = length(rho)
-
-    if L < 2
-        error("ERR: chain is too short.")
-    end
+function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, 
+    alpha::Float64=1.1, tolerance::Float64=0.0, Dmax::Int=100)
 
     # Double the inverse temperature
     beta += beta
+
+    # Extract chain length
+    L = length(rho)
 
     # Maximal bond dimension increased by multiplication factor alpha
     D = max(maximum([size(tensor, 1) for tensor in rho]), maximum([size(tensor, 3) for tensor in rho]))
@@ -57,15 +56,15 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     print("# # # Started Variational Optimization # # #\n")
     print("Temperature update: $beta ---> $(2*beta)")
-    print("# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2\n | convergence = $convergence | Nkeep = $Nkeep | tolerance = $tolerance")
+    print("""# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2\n | convergence = $convergence
+         | Nkeep = $Nkeep (Dmax = $Dmax, alpha = $alpha) | tolerance = $tolerance""")
 
-    # Storage for the environments
+    # Prepare storage for left and right environments 
     Vlr = Vector{Array{ComplexF64, 3}}(undef, L+2)
-
-    # Compute left and right environments 
     Vlr[1] = reshape([1], 1, 1, 1)
     Vlr[end] = reshape([1], 1, 1, 1)
 
+    # Compute all left environments
     for itL in 1:L
         Vlr[itL+1] = updateLeftEnv(Vlr[itL], rho[itL], rho[itL], rho2[itL])
     end
@@ -125,6 +124,10 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     # Complex conjugate and transpose to retrieve result
     rho2 = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
+
+    # Ensure normalization and site-canonical form
+    _ = normalize_mpo!(rho2)
+    rho2 = sitecanonical(rho2, L-1)
 
     # Evaluate whether the optimization has sufficiently converged
     norm = normalize_mpo!(add_mpo(square_mpo(rho), [-rho2[1], rho2[2:end]]))
