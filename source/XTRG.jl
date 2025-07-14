@@ -52,9 +52,9 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     
     # # # Variational DMRG-type sweeping # # #
 
-    print("# # # Started Variational Optimization # # #\n")
-    print("Temperature update: $beta ---> $(2*beta)")
-    print("""# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2\n | convergence = $convergence
+    println("# # # Started Variational Optimization # # #")
+    println("Temperature update: $beta ---> $(2*beta)")
+    print("""# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2 | convergence = $convergence
          | Nkeep = $Nkeep (Dmax = $Dmax, alpha = $alpha) | tolerance = $tolerance""")
 
     # Prepare storage for left and right environments 
@@ -82,6 +82,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
 
             # Update two-site tensor via tensor SVD
             U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
+            print(typeof(U))
             rho2[itL] = Vd 
             rho2[itL-1] = permutedims(U*Diagonal(S), (1,2,4,3))
 
@@ -101,7 +102,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
             leftEnv = contract(leftEnv, [2,3], rho[itL], [1,4])
 
             rightEnv = contract(Vlr[itL+3], [3], rho[itL+1], [3])
-            rightEnv = contact(rightEnv, [2,4], rho[itL+1], [3,4])
+            rightEnv = contract(rightEnv, [2,4], rho[itL+1], [3,4])
 
             rho_update = contract(leftEnv, [2,5], rightEnv, [2,4], [1,3,6,4,2,5]) 
 
@@ -136,7 +137,7 @@ end
 
 
 """
-    XTRG_algorithm(L::Int, beta0::Float64, Nsteps::Int, rho0::Vector{<:AbstractArray{<:Number, 4}})
+    XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector{<:AbstractArray{<:Number, 4}})
 
 Function executing the XTRG algorithm to simulate the XY-Hamiltonian for a one-dimensional spin-1/2 system over a given temperature range.
 
@@ -161,7 +162,7 @@ function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector)
     # Initialize storage arrays
     betas = Vector{Float64}(undef, Nsteps + 1)
     Zs = Vector{Float64}(undef, Nsteps + 1)
-    rhos = Vector{Vector{<:AbstractArray{<:Number, 4}}}(undef, Nsteps + 1)
+    rhos = Vector{Any}(undef, Nsteps + 1)
 
     # Store initial values
     betas[1] = beta0
