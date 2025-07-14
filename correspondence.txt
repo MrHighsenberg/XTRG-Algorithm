@@ -8,7 +8,7 @@ not need rightcanonicalmpo! and sitecanonicalmpo!)
 
 - Changed the canonicalization methods to in-place updates
 
-- Added the trace_mpo function with a unit test
+- Added the trace_mpo function with a unit test, and integrated the line in the XTRG update
 
 # Messages Damiano:
 
