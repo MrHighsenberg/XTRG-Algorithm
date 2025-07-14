@@ -3,7 +3,7 @@ export XTRG_update, XTRG_algorithm
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
-import .MPO: zero_mpo, add_mpo, square_mpo, leftcanonicalmpo!, normalize_mpo!
+import .MPO: zero_mpo, add_mpo, square_mpo, trace_mpo, leftcanonicalmpo!, normalize_mpo!
 
 """
     XTRG_update(rho::Vector{<:AbstractArray{<:Number, 4}}, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
@@ -23,6 +23,7 @@ Parameters:
 Returns:
 - `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors corresponding to the unnormalized quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new.
+- `Z::Float64`
 
 """
 function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, 
@@ -122,10 +123,15 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
     norm = normalize_mpo!(add_mpo(square_mpo(rho), [-rho2[1], rho2[2:end]]))
     println("Convergence successful: $((norm^2) < convergence)")
 
+    # Compute the partition function 
+    Z = trace_mpo(rho2)
+    @assert abs(imag(Z)) < 1e-12 "Partition function has significant imaginary part: $(imag(Z))"
+    Z = real(Z)
+
     # Double the inverse temperature
     beta += beta
 
-    return rho2, beta
+    return rho2, beta, Z
 
 end
 
