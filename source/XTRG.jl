@@ -2,6 +2,7 @@ module XTRG
 export XTRG_update, XTRG_algorithm
 using LinearAlgebra
 include("../source/contractions.jl")
+include("../source/MPO.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
 import .MPO: zero_mpo, add_mpo, square_mpo, trace_mpo, leftcanonicalmpo!, normalize_mpo!
 
@@ -11,7 +12,7 @@ import .MPO: zero_mpo, add_mpo, square_mpo, trace_mpo, leftcanonicalmpo!, normal
 Function performing a single update of the XTRG algorithm from inverse temperatures beta ---> 2*beta
 
 Parameters:
-- `rho::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors corresponding to the unnormalized quantum state at inverse temperature beta.
+- `rho::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature beta.
 - `beta::Float64`: Current inverse temperature of the input state rho.
 - `square::Bool`: If true the updated rho is initialized as the square of rho, otherwise increase bond dimension by padding with zeros.
 - `Nsweeps::Int`: Number of sweeps performed in the variational DMRG-type optimization along one direction of the chain.
@@ -21,12 +22,12 @@ Parameters:
 - `tolerance::Float64`: Minimum magnitude of singular values to keep in the SVD during optimization.
 
 Returns:
-- `rho2::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors corresponding to the unnormalized quantum state at inverse temperature 2*beta.
+- `rho2::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new.
 - `Z::Float64`
 
 """
-function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, convergence::Float64=1e-10, 
+function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-10, 
     alpha::Float64=1.1, tolerance::Float64=1e-12, Dmax::Int=100)
 
     # Extract chain length
@@ -124,9 +125,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
     println("Convergence successful: $((norm^2) < convergence)")
 
     # Compute the partition function 
-    Z = trace_mpo(rho2)
-    @assert abs(imag(Z)) < 1e-12 "Partition function has significant imaginary part: $(imag(Z))"
-    Z = real(Z)
+    Z = real(trace_mpo(rho2))
 
     # Double the inverse temperature
     beta += beta
@@ -137,21 +136,50 @@ end
 
 
 """
-    XTRG_algorithm(L::Int, beta0::Float64, betamax::Float64)
+    XTRG_algorithm(L::Int, beta0::Float64, Nsteps::Int, rho0::Vector{<:AbstractArray{<:Number, 4}})
 
-Function executing the XTRG algorithm to simulate the XY-Hamiltonian for a spin-1/2 system over a given temperature range.
+Function executing the XTRG algorithm to simulate the XY-Hamiltonian for a one-dimensional spin-1/2 system over a given temperature range.
 
 Parameters:
-- `L::Int`: length of the one-dimensional spin-1/2 system.
-- `beta0::Float64`: initial inverse temperature to start the XTRG algorithm.
-- `betamax::Float64`: maximal inverse temperature at which the XTRG algorithm is stopped.
+- `beta0::Float64`: Initial inverse temperature to start the XTRG algorithm.
+- `Nsteps::Int`: Number of executions of the XTRG update.
+- `rho0::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors of the initial unnormalized quantum state.
 
 Returns:
-- `rhos::Dict{Float64, Vector{Array{ComplexF64, 4}}}`: The MPOs for different thermal states
+- `betas::Vector{Float64}`: Vector of inverse temperatures at each step.
+- `Zs::Vector{Float64}`: Vector of partition functions corresponding to each thermal state at the respective inverse temperatures.
+- `rhos::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors of the different thermal states.
 
 """
-function XTRG_algorithm(beta0::Float64=1e-6, betamax::Float64=1e+14, rho0::Vector)
+function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector)
 
+    # Set initial values for iterative update
+    beta = beta0
+    rho = rho0
+    Z0 = real(trace_mpo(rho0))
+
+    # Initialize storage arrays
+    betas = Vector{Float64}(undef, Nsteps + 1)
+    Zs = Vector{Float64}(undef, Nsteps + 1)
+    rhos = Vector{Vector{<:AbstractArray{<:Number, 4}}}(undef, Nsteps + 1)
+
+    # Store initial values
+    betas[1] = beta0
+    Zs[1] = Z0
+    rhos[1] = deepcopy(rho0)
+
+    for n in 1:Nsteps
+
+        rho, beta, Z = XTRG_update(rho, beta)
+
+        # Store updated values
+        betas[n+1] = beta
+        Zs[n+1] = Z
+        rhos[n+1] = deepcopy(rho)
+
+    end
+
+    return betas, Zs, rhos
 end
 
 end

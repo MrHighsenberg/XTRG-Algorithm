@@ -266,7 +266,7 @@ Normalizes an MPO in-place by distributing the normalization weight across all t
 Uses the updateLefEnv function to iteratively contract the MPO tensors to compute the Frobenius norm.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors 
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors 
 
 Returns:
 - `norm::Float64`: Norm of the unnormalized input MPO
@@ -313,7 +313,7 @@ end
 Modifies the MPO in-place to bring it into left-canonical form.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
 """
@@ -334,7 +334,7 @@ end
 Modifies the MPO in-place to bring it into right-canonical form.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
 """
@@ -356,7 +356,7 @@ Modifies the MPO in-place to bring it into site-canonical form with respect to s
 are in left-canonical form and tensors to the right of site l are in right-canonical form.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors
 - `l::Int`: Index of the orthogonality center
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
