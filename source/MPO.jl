@@ -1,5 +1,5 @@
 module MPO
-export xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!,
+export xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo, trace_mpo, normalize_mpo!,
          leftcanonicalmpo!, rightcanonicalmpo!, sitecanonicalmpo!
 using LinearAlgebra
 include("../source/contractions.jl")
@@ -198,10 +198,10 @@ end
 Returns mpo2 as an MPO representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: The mpo representing the operator to be squared, # leg ordering: left bottom right top
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: The MPO representing the operator to be squared, # leg ordering: left bottom right top
 
 Returns:
-- `mpo2::Vector{<:AbstractArray{<:Number, 4}}`: The mpo representing the squared operator
+- `mpo2::Vector{<:AbstractArray{<:Number, 4}}`: The MPO representing the squared operator
 """
 function square_mpo(mpo::Vector)
 
@@ -219,6 +219,43 @@ function square_mpo(mpo::Vector)
         mpo2[i] = WW
     end
     return mpo2
+end
+
+
+"""
+    trace_mpo(mpo::Vector{<:AbstractArray{<:Number, 4}})
+
+Computes the trace of an MPO by summing over local physical indices and contracting adjacent tensors.
+
+Parameters:
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: The MPO representing the operator to be traced over, # leg ordering: left bottom right top
+
+Returns:
+- `trace::Float64`: The value of the trace.
+"""
+function trace_mpo(mpo::Vector)
+    L = length(mpo)
+    
+    matrices = Vector{Matrix{Any}}(undef, L)
+    
+    for i in 1:L
+        matrices[i] = zeros(size(mpo[i], 1), size(mpo[i], 3))
+        
+        # Tracing over physical indices
+        @assert size(mpo[i], 2) == size(mpo[i], 4)
+        for j in 1:size(mpo[i], 2)
+            matrices[i] .+= mpo[i][:, j, :, j]
+        end
+    end
+    
+    # Contract matrices from left to right
+    result = matrices[1]
+    for i in 2:L
+        result = result * matrices[i]
+    end
+    
+    # Extract scalar trace value
+    return result[1,1]
 end
 
 
@@ -325,7 +362,6 @@ Parameters:
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
 """
 function sitecanonicalmpo!(mpo::Vector, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
-    
     L = length(mpo)
 
     # Check validty of orthogonality center index

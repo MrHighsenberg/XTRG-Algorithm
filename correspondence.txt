@@ -8,6 +8,8 @@ not need rightcanonicalmpo! and sitecanonicalmpo!)
 
 - Changed the canonicalization methods to in-place updates
 
+- Added the trace_mpo function with a unit test
+
 # Messages Damiano:
 
 - 

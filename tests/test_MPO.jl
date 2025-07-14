@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 include("../source/MPO.jl")
 import .contractions: contract
-import .MPO: spinlocalspace, xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo,
+import .MPO: spinlocalspace, xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo, trace_mpo,
             normalize_mpo!, leftcanonicalmpo!, rightcanonicalmpo!, sitecanonicalmpo!
 
 @testset "spinlocalspace" begin
@@ -87,6 +87,28 @@ end
     mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
     mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
     @test mat1 ≈ mat2
+end
+
+@testset "trace_mpo" begin
+    @testset "Identity MPO trace" begin
+        d = 2
+        L = 3
+        id_mpo = identity_mpo(L, d)
+        @test trace_mpo(id_mpo) ≈ d^L
+    end
+    
+    @testset "Zero MPO trace" begin
+        d = 3
+        L = 2
+        zero_mpo_test = zero_mpo(L, d)
+        @test trace_mpo(zero_mpo_test) ≈ 0.0
+    end
+    
+    @testset "Single site MPO" begin
+        sigma_x = [0.0 1.0; 1.0 0.0]
+        mpo = [reshape(sigma_x, 1, 2, 1, 2)]
+        @test trace_mpo(mpo) ≈ tr(sigma_x)
+    end
 end
 
 @testset "normalize_mpo!" begin
