@@ -7,7 +7,7 @@ import .contractions: contract, tensor_svd, updateLeftEnv
 import .MPO: zero_mpo, add_mpo, square_mpo, trace_mpo, leftcanonicalmpo!, normalize_mpo!
 
 """
-    XTRG_update(rho::Vector{<:AbstractArray{<:Number, 4}}, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
+    XTRG_update(rho::Vector, beta::Float64; square::Bool, Nsweeps::Int, convergence::Float64, alpha::Float64, tolerance::Float64, Dmax::Int)
 
 Function performing a single update of the XTRG algorithm from inverse temperatures beta ---> 2*beta
 
@@ -23,8 +23,8 @@ Parameters:
 
 Returns:
 - `rho2::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature 2*beta.
-- `beta::Float64`: Increased inverse temperature 2*beta for the state rho_new.
-- `Z::Float64`
+- `beta::Float64`: Increased inverse temperature 2*beta for the updated state rho2.
+- `Z::Float64`: Partition function corresponding to the updated state rho2.
 
 """
 function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-10, 
