@@ -12,6 +12,9 @@ not need rightcanonicalmpo! and sitecanonicalmpo!)
 
 - Finished the main XTRG algorithm function and prepared for execution, plotting against analytical partition function set up
 
+- Plot looks not too bad even even though there's orders of magnitude in difference, the curve shape looks fine though compared to the
+analytical solutions. Seems like we're missing out on some factors (hopefully only that). Need your help to check what I've missed here!
+
 # Messages Damiano:
 
 - 
