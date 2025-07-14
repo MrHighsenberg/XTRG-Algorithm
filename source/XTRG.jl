@@ -27,8 +27,8 @@ Returns:
 - `Z::Float64`: Partition function corresponding to the updated state rho2.
 
 """
-function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-10, 
-    alpha::Float64=1.1, tolerance::Float64=1e-12, Dmax::Int=100)
+function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-8, 
+    alpha::Float64=1.5, tolerance::Float64=1e-8, Dmax::Int=75)
 
     # Extract chain length
     L = length(rho)
@@ -53,9 +53,18 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     # # # Variational DMRG-type sweeping # # #
 
     println("# # # Started Variational Optimization # # #")
+    println("============================================")
     println("Temperature update: $beta ---> $(2*beta)")
-    println("""# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2 | convergence = $convergence
-         | Nkeep = $Nkeep (Dmax = $Dmax, alpha = $alpha) | tolerance = $tolerance""")
+    println("============================================")
+    println(">>> # of sites = $L")
+    println(">>> square mode = $square")
+    println(">>> # of sweeps = $Nsweeps x 2")
+    println(">>> convergence = $convergence")
+    println(">>> Dmax = $Dmax")
+    println(">>> alpha = $alpha")
+    println(">>> Nkeep = $Nkeep")
+    println(">>> tolerance = $tolerance")
+    flush(stdout)
 
     # Prepare storage for left and right environments 
     Vlr = Vector{Array{ComplexF64, 3}}(undef, L+2)
@@ -92,6 +101,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
 
         # Display information of the right-left sweep
         println("Completed right-left sweep $itS / $Nsweeps")
+        flush(stdout)
 
         # sweeping: left ---> right
         for itL = 1:(L-1)
@@ -115,12 +125,17 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
 
         # Display information of the left-right sweep
         println("Completed left-right sweep $itS / $Nsweeps")
+        flush(stdout)
 
     end
 
     # Evaluate whether the optimization has sufficiently converged
-    norm = normalize_mpo!(add_mpo(square_mpo(rho), [-rho2[1], rho2[2:end]]))
+    square_rho = square_mpo(rho)
+    square_rho[1] = -square_rho[1]
+    norm = normalize_mpo!(add_mpo(square_rho, rho2))
     println("Convergence successful: $((norm^2) < convergence)")
+    println("\n")
+    flush(stdout)
 
     # Compute the partition function 
     Z = real(trace_mpo(rho2))

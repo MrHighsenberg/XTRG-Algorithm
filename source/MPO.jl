@@ -162,7 +162,8 @@ Note: Assumes open boundary conditions and matching physical dimensions.
 function add_mpo(A::Vector, B::Vector)
 
     L = length(A)
-    C = Vector{Any}(undef, L)
+    T = promote_type(eltype(A[1]), eltype(B[1]))
+    C = Vector{Array{T, 4}}(undef, L)
 
     for i in 1:L
         d1, d2 = size(A[i], 2), size(A[i], 4)
@@ -171,17 +172,17 @@ function add_mpo(A::Vector, B::Vector)
         # New tensor with summed bond dimensions
         if i == 1
             # First site: trivial left bond dimension
-            C[i] = zeros(promote_type(eltype(A[i]), eltype(B[i])), 1, d1, D1r + D2r, d2)
+            C[i] = zeros(T, 1, d1, D1r + D2r, d2)
             C[i][1, :, 1:D1r, :] .= A[i][1, :, :, :]
             C[i][1, :, D1r+1:end, :] .= B[i][1, :, :, :]
         elseif i == L
             # Last site: trivial right bond dimension
-            C[i] = zeros(promote_type(eltype(A[i]), eltype(B[i])), D1l + D2l, d1, 1, d2)
+            C[i] = zeros(T, D1l + D2l, d1, 1, d2)
             C[i][1:D1l, :, 1, :] .= A[i][:, :, 1, :]
             C[i][D1l+1:end, :, 1, :] .= B[i][:, :, 1, :]
         else
             # Middle sites: block diagonal structure
-            C[i] = zeros(promote_type(eltype(A[i]), eltype(B[i])), D1l + D2l, d1, D1r + D2r, d2)
+            C[i] = zeros(T, D1l + D2l, d1, D1r + D2r, d2)
             # Place the A block
             C[i][1:D1l, :, 1:D1r, :] .= A[i]
             # Place the B block
@@ -296,7 +297,7 @@ function normalize_mpo!(mpo::Vector)
     end
     
     # Evaluate the Frobenius norm
-    norm_squared = real(V[1, 1, 1])
+    norm_squared = abs(V[1, 1, 1])
     norm = sqrt(norm_squared)
     
     # Normalize the MPO by distributing the weight    
