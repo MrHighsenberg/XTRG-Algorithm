@@ -1,5 +1,6 @@
 module MPO
-export xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
+export xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo, normalize_mpo!,
+         leftcanonicalmpo!, rightcanonicalmpo!, sitecanonicalmpo!
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
@@ -270,61 +271,51 @@ end
 
 
 """
-    leftcanonicalmpo(mpo::Vector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    leftcanonicalmpo!(mpo::Vector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
 
-Returns the MPO in left-canonical form.
+Modifies the MPO in-place to bring it into left-canonical form.
 
 Parameters:
 - `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
-
-Returns:
-- `leftmpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in left-canonical form.
 """
-function leftcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+function leftcanonicalmpo!(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     L = length(mpo)
-    leftmpo = deepcopy(mpo)
     # Left-canonicalize site by site from left to right
     for itL in 1:L-1
-        U, S, Vd, _ = tensor_svd(leftmpo[itL], [1,2,4]; Nkeep = Nkeep, tolerance = tolerance)
-        leftmpo[itL] = permutedims(U, (1,2,4,3))
-        leftmpo[itL+1] = contract(Diagonal(S)*Vd, [2], leftmpo[itL+1], [1])
+        U, S, Vd, _ = tensor_svd(mpo[itL], [1,2,4]; Nkeep = Nkeep, tolerance = tolerance)
+        mpo[itL] = permutedims(U, (1,2,4,3))
+        mpo[itL+1] = contract(Diagonal(S)*Vd, [2], mpo[itL+1], [1])
     end
-    return leftmpo
 end
 
 
 """
-    rightcanonicalmpo(mpo::Vector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    rightcanonicalmpo!(mpo::Vector{<:AbstractArray{<:Number, 4}}; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
 
-Returns the MPO in right-canonical form.
+Modifies the MPO in-place to bring it into right-canonical form.
 
 Parameters:
 - `mpo::Vector{<:AbstractArray{<:Number, 4}}`: List of MPO tensors
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
-
-Returns:
-- `rightmpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in right-canonical form.
 """
-function rightcanonicalmpo(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+function rightcanonicalmpo!(mpo::Vector; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     L = length(mpo)
-    rightmpo = deepcopy(mpo)
     # Right-canonicalize site by site from right to left
     for itL in L:-1:2
-        U, S, Vd, _ = tensor_svd(rightmpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
-        rightmpo[itL] = Vd
-        rightmpo[itL-1] = permutedims(contract(rightmpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
+        U, S, Vd, _ = tensor_svd(mpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
+        mpo[itL] = Vd
+        mpo[itL-1] = permutedims(contract(mpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
     end
-    return rightmpo
 end
 
 
 """
-    sitecanonicalmpo(mpo::Vector{<:AbstractArray{<:Number, 4}}, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+    sitecanonicalmpo!(mpo::Vector{<:AbstractArray{<:Number, 4}}, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
 
-Returns the MPO in site-canonical form with respect to site l, where tensors to the left of site l
+Modifies the MPO in-place to bring it into site-canonical form with respect to site l, where tensors to the left of site l
 are in left-canonical form and tensors to the right of site l are in right-canonical form.
 
 Parameters:
@@ -332,11 +323,8 @@ Parameters:
 - `l::Int`: Index of the orthogonality center
 - `Nkeep::Int`: maximum number of singular values to keep. Default is `typemax(Int)`.
 - `tolerance::Float64`: minimum magnitude of singular values to keep. Default is `0.0`.
-
-Returns:
-- `canonical_mpo::Vector{<:AbstractArray{<:Number, 4}}`: mpo in site-canonical form.
 """
-function sitecanonicalmpo(mpo::Vector, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
+function sitecanonicalmpo!(mpo::Vector, l::Int; Nkeep::Int=typemax(Int), tolerance::Float64=0.0)
     
     L = length(mpo)
 
@@ -346,16 +334,14 @@ function sitecanonicalmpo(mpo::Vector, l::Int; Nkeep::Int=typemax(Int), toleranc
     end
     
     # First apply left canonicalization to get everything in left-canonical form
-    canonical_mpo = leftcanonicalmpo(mpo; Nkeep = Nkeep, tolerance = tolerance)
+    leftcanonicalmpo!(mpo; Nkeep = Nkeep, tolerance = tolerance)
     
     # Right-canonicalize tensors from site L to l+1
     for itL in L:-1:l+1
-        U, S, Vd, _ = tensor_svd(canonical_mpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
-        canonical_mpo[itL] = Vd
-        canonical_mpo[itL-1] = permutedims(contract(canonical_mpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
+        U, S, Vd, _ = tensor_svd(mpo[itL], [1]; Nkeep = Nkeep, tolerance = tolerance)
+        mpo[itL] = Vd
+        mpo[itL-1] = permutedims(contract(mpo[itL-1], [3], U*Diagonal(S), [1]), (1,2,4,3))
     end
-    
-    return canonical_mpo
 end
 
 end

@@ -3,7 +3,7 @@ using LinearAlgebra
 include("../source/MPO.jl")
 import .contractions: contract
 import .MPO: spinlocalspace, xychain_mpo, identity_mpo, zero_mpo, mpo_to_tensor, add_mpo, square_mpo,
-            normalize_mpo!, leftcanonicalmpo, rightcanonicalmpo, sitecanonicalmpo
+            normalize_mpo!, leftcanonicalmpo!, rightcanonicalmpo!, sitecanonicalmpo!
 
 @testset "spinlocalspace" begin
     Splus, _, Id = spinlocalspace(1//2) 
@@ -83,7 +83,7 @@ end
     D = 10
     d = 10
     mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
-    mpo2 = square_mpo(mpo, D^2)
+    mpo2 = square_mpo(mpo)
     mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
     mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
     @test mat1 ≈ mat2
@@ -116,7 +116,7 @@ end
     @test !(mpo[3] ≈ mpo_copy[3])
 end
 
-@testset "leftcanonicalmpo" begin
+@testset "leftcanonicalmpo!" begin
     L = 4
     # Generate a random MPO
     mpo = [rand(ComplexF64, 1, 5, 2, 5), rand(ComplexF64, 2, 2, 4, 2), rand(ComplexF64, 4, 3, 7, 3), rand(ComplexF64, 7, 2, 1, 2)]
@@ -125,7 +125,8 @@ end
     normalize_mpo!(mpo)
 
     # Left-canonicalize the MPO
-    leftmpo = leftcanonicalmpo(mpo)
+    leftmpo = deepcopy(mpo)
+    leftcanonicalmpo!(leftmpo)
 
     for itL in 1:L
         W = leftmpo[itL]
@@ -135,7 +136,7 @@ end
     @test !(mpo[3][1,1,1,1] == leftmpo[3][1,1,1,1]) # but local tensors are different
 end
 
-@testset "rightcanonicalmpo" begin
+@testset "rightcanonicalmpo!" begin
     L = 4
     # Generate a random MPO
     mpo = [rand(ComplexF64, 1, 7, 2, 7), rand(ComplexF64, 2, 4, 5, 4), rand(ComplexF64, 5, 2, 6, 2), rand(ComplexF64, 6, 2, 1, 2)]
@@ -144,7 +145,8 @@ end
     normalize_mpo!(mpo)
 
     # Right-canonicalize the MPO
-    rightmpo = rightcanonicalmpo(mpo)
+    rightmpo = deepcopy(mpo)
+    rightcanonicalmpo!(rightmpo)
 
     for itL in 1:L
         W = rightmpo[itL]
@@ -154,7 +156,7 @@ end
     @test !(mpo[3][1,1,1,1] == rightmpo[3][1,1,1,1]) # but local tensors are different
 end
 
-@testset "sitecanonicalmpo" begin
+@testset "sitecanonicalmpo!" begin
     L = 4
     l = 3 # Choose orthogonality center at site 3
 
@@ -165,7 +167,8 @@ end
     normalize_mpo!(mpo)
 
     # Site-canonicalize the MPO
-    sitempo = sitecanonicalmpo(mpo, l)
+    sitempo = deepcopy(mpo)
+    sitecanonicalmpo!(sitempo, l)
 
     # Check left-canonical form for sites 1 to l-1
     for itL in 1:l-1
@@ -183,16 +186,16 @@ end
     @test !(mpo[2][1,1,1,1] == sitempo[2][1,1,1,1]) # but local tensors are different
     
     # Test orthogonality center at first site
-    sitempo_first = sitecanonicalmpo(mpo, 1)
+    sitecanonicalmpo!(sitempo, 1)
     for itL in 2:L
-        W = sitempo_first[itL]
+        W = sitempo[itL]
         @test contract(conj(W), [2,3,4], W, [2,3,4]) ≈ I(size(W, 1))
     end
     
     # Test orthogonality center at last site
-    sitempo_last = sitecanonicalmpo(mpo, L)
+    sitecanonicalmpo!(sitempo, L)
     for itL in 1:L-1
-        W = sitempo_last[itL]
+        W = sitempo[itL]
         @test contract(conj(W), [1,2,4], W, [1,2,4]) ≈ I(size(W, 3))
     end
 end

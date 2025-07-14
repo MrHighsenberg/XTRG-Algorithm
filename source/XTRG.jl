@@ -3,7 +3,7 @@ export XTRG_update, XTRG_algorithm
 using LinearAlgebra
 include("../source/contractions.jl")
 import .contractions: contract, tensor_svd, updateLeftEnv
-import .MPO: zero_mpo, add_mpo, square_mpo, normalize_mpo!
+import .MPO: zero_mpo, add_mpo, square_mpo, leftcanonicalmpo!, normalize_mpo!
 
 """
     XTRG_update(rho::Vector{<:AbstractArray{<:Number, 4}}, beta::Float64, mode::Bool, Nsweeps::Int, tolerance:Float64)
@@ -46,10 +46,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
     end
 
     # Canonicalize the initial state
-    rho2 = leftcanonicalmpo(rho2)
-
-    # Compute adjoint initial state for optimization
-    rho2 = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
+    leftcanonicalmpo!(rho2)
     
     # # # Variational DMRG-type sweeping # # #
 
@@ -65,7 +62,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
     # Compute all left environments
     for itL in 1:L
-        Vlr[itL+1] = updateLeftEnv(Vlr[itL], rho[itL], rho[itL], rho2[itL])
+        Vlr[itL+1] = updateLeftEnv(Vlr[itL], rho[itL], rho[itL], permutedims(conj(rho2[itL]), (1,4,3,2)))
     end
 
     for itS in 1:Nsweeps
@@ -88,7 +85,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
 
             # Update right environment for next site
             Vlr[itL+1] = updateLeftEnv(permutedims(Vlr[itL+2], (3,2,1,4)), permutedims(rho[itL], (3,2,1,4)),
-                            permutedims(rho[itL], (3,2,1,4)), permutedims(rho2[itL], (3,2,1,4)))
+                            permutedims(rho[itL], (3,2,1,4)), permutedims(conj(rho2[itL]), (3,4,1,2)))
 
         end 
 
@@ -112,7 +109,7 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
             rho2[itL+1] = Diagonal(S)*Vd
 
             # Update left environment for next site
-            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], rho2[itL])
+            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], permutedims(conj(rho2[itL]), (1,4,3,2)))
 
         end
 
@@ -120,9 +117,6 @@ function XTRG_update(rho::Vector, beta::Float64, square::Bool, Nsweeps::Int=5, c
         print("Completed left-right sweep $itS / $Nsweeps")
 
     end
-
-    # Complex conjugate and transpose to retrieve result
-    rho2 = [permutedims(conj(tensor), (1,4,3,2)) for tensor in rho2]
 
     # Evaluate whether the optimization has sufficiently converged
     norm = normalize_mpo!(add_mpo(square_mpo(rho), [-rho2[1], rho2[2:end]]))

@@ -1,19 +1,12 @@
 # Messages Matthias:
 
-- Thanks for the leftcanonicalmpo method! Looks good!
+- Modified the storage of the updated rho2 tensor in the XTRG update (only complex conjugate during
+ the environment updates seemed more efficient in the end)
 
-- Have now also implemented mpo_normalize! which we will need after the linear initialization. Also now by construction the very last MPO tensor
-  in the chain becomes left-canonicalized as well.
+- States are not normalized anymore and leftcanonicalized in the beginning of each XTRG update (this should do the job, seems like we may 
+not need rightcanonicalmpo! and sitecanonicalmpo!)
 
-- Updated the add_mpo function, we store boundary mpo tensors always such that the respective last bond dimension equals 1, in that way all the 
-  canonicalization and normalization functions work properly.
-
-- Implemented the rightcanonicalmpo method and the sitecanonicalmpo method which follows quickly.
-
-- Implemented a provisional version of the XTRG update function.
-
-- If you have some time, please keep working on the powerpoint by also integrating the relevant formula and figures from the paper. We have only 
-have four more days left to get the presentation finished.
+- Changed the canonicalization methods to in-place updates
 
 # Messages Damiano:
 
