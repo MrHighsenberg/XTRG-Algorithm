@@ -197,18 +197,15 @@ end
 Returns mpo2 as an MPO representing the square of the operator represented by mpo. The dimension of each virtual bond of mpo2 is at most Dmax.
 
 Parameters:
-- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: the mpo representing the operator to be squared, # leg ordering: left bottom right top
-- `Dmax::Int`: maximal bond dimension of output mpo
+- `mpo::Vector{<:AbstractArray{<:Number, 4}}`: The mpo representing the operator to be squared, # leg ordering: left bottom right top
 
 Returns:
-- `mpo2::Vector{<:AbstractArray{<:Number, 4}}`: the mpo representing the squared operator if maximal bond dimension is not exceeded (else return mpo)
-
+- `mpo2::Vector{<:AbstractArray{<:Number, 4}}`: The mpo representing the squared operator
 """
-function square_mpo(mpo::Vector, Dmax::Int=typemax(Int))
+function square_mpo(mpo::Vector)
 
     L = length(mpo)
     d = size(mpo[1], 2) # Assume local dimension equal at all sites
-    D = max(maximum([size(W, 1) for W in mpo]), maximum([size(W, 3) for W in mpo])) # Maximal bond dimension across all W tensors
 
     mpo2 = Vector{Any}(undef, L)
     for i in (1:L)
