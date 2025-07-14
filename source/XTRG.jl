@@ -54,7 +54,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
 
     println("# # # Started Variational Optimization # # #")
     println("Temperature update: $beta ---> $(2*beta)")
-    print("""# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2 | convergence = $convergence
+    println("""# of sites = $L | square mode = $square | # of sweeps = $Nsweeps x 2 | convergence = $convergence
          | Nkeep = $Nkeep (Dmax = $Dmax, alpha = $alpha) | tolerance = $tolerance""")
 
     # Prepare storage for left and right environments 
@@ -86,13 +86,12 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
             rho2[itL-1] = permutedims(contract(U, [4], Diagonal(S), [1]), (1,2,4,3))
 
             # Update right environment for next site
-            Vlr[itL+1] = updateLeftEnv(permutedims(Vlr[itL+2], (3,2,1,4)), permutedims(rho[itL], (3,2,1,4)),
+            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], permutedims(rho[itL], (3,2,1,4)),
                             permutedims(rho[itL], (3,2,1,4)), permutedims(conj(rho2[itL]), (3,4,1,2)))
-
         end 
 
         # Display information of the right-left sweep
-        print("Completed right-left sweep $itS / $Nsweeps")
+        println("Completed right-left sweep $itS / $Nsweeps")
 
         # sweeping: left ---> right
         for itL = 1:(L-1)
@@ -111,12 +110,11 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
             rho2[itL+1] = contract(Diagonal(S), [2], Vd, [1])
 
             # Update left environment for next site
-            Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], permutedims(conj(rho2[itL]), (1,4,3,2)))
-
+            Vlr[itL+1] = updateLeftEnv(Vlr[itL], rho[itL], rho[itL], permutedims(conj(rho2[itL]), (1,4,3,2)))
         end
 
         # Display information of the left-right sweep
-        print("Completed left-right sweep $itS / $Nsweeps")
+        println("Completed left-right sweep $itS / $Nsweeps")
 
     end
 
