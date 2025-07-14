@@ -82,9 +82,8 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
 
             # Update two-site tensor via tensor SVD
             U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
-            print(typeof(U))
             rho2[itL] = Vd 
-            rho2[itL-1] = permutedims(U*Diagonal(S), (1,2,4,3))
+            rho2[itL-1] = permutedims(contract(U, [4], Diagonal(S), [1]), (1,2,4,3))
 
             # Update right environment for next site
             Vlr[itL+1] = updateLeftEnv(permutedims(Vlr[itL+2], (3,2,1,4)), permutedims(rho[itL], (3,2,1,4)),
@@ -109,7 +108,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
             # Update two-site tensor via tensor SVD
             U, S, Vd, _ = tensor_svd(rho_update, [1,2,5]; Nkeep = Nkeep, tolerance = tolerance)
             rho2[itL] = permutedims(U, (1,2,4,3)) 
-            rho2[itL+1] = Diagonal(S)*Vd
+            rho2[itL+1] = contract(Diagonal(S), [2], Vd, [1])
 
             # Update left environment for next site
             Vlr[itL+1] = updateLeftEnv(Vlr[itL+2], rho[itL], rho[itL], permutedims(conj(rho2[itL]), (1,4,3,2)))
