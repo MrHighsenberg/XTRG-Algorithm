@@ -10,6 +10,8 @@ not need rightcanonicalmpo! and sitecanonicalmpo!)
 
 - Added the trace_mpo function with a unit test, and integrated the line in the XTRG update
 
+- Finished the main XTRG algorithm function and prepared for execution, plotting against analytical partition function set up
+
 # Messages Damiano:
 
 - 
