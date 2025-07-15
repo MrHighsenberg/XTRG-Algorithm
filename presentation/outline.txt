@@ -1,0 +1,27 @@
+Presentation outline (tot 16/17 slides):
+
+1) INTRODUCTION (1 slide)
+- basic theoretical idea of method (operator level, no tensor networks)
+- we'll apply method to 1D XY model and compare to analytical solution
+2) METHOD (2/3 slides)
+- XTRG algorithm
+- XTRG update, i.e. how exactly we approximate/compress the square of an MPO
+- linear initialization
+3) CODE (9 slides, 1 slide per main method, to go through quickly. Title + one-line description + drawing + code screenshot)
+- tensor_svd
+- updateLeftEnv
+- add_mpo (needed for linear initialization)
+- square_mpo (for XTRG step, eith result to be compressed)
+- trace_mpo
+- normalize_mpo (for convergence checks)
+- canonical forms, e.g. left 
+- XTRG_update
+- XTRG_algorithm
+4) RESULTS ON XY model (3 slides)
+- show plot for Z(beta)
+- singular value plots
+- explain why we cannot go beyond 20 steps; raise doubts on how one can actually reach low T 
+*Here, if time allows, we can OPEN JUPYTER NOTEBOOK and run all of it. Would make sense, since we made an effort in keeping the notebook non-technical*
+5) SUMMARY AND CONCLUSIONS (1 slide)
+
+
