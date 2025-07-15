@@ -25,6 +25,7 @@ Returns:
 - `rho2::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the updated state rho2.
 - `Z::Float64`: Partition function corresponding to the updated state rho2.
+- `sing_value_list::Vector{Vector{Float64}}`: Vector of length L - 1 whose itL-th entry contains the singular values obtained after the update of sites itL and itL + 1, in the last (left->right) sweep.
 
 """
 function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-8, 
@@ -36,6 +37,9 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     # Maximal bond dimension increased by factor alpha
     D = max(maximum([size(tensor, 1) for tensor in rho]), maximum([size(tensor, 3) for tensor in rho]))
     Nkeep = min(Int(round(alpha * D)), Dmax)
+
+    # Initialize vector which will store singular values
+    sing_value_list = [Float64[] for _ in 1:(L-1)]
 
     # # # Choose initialization mode # # #
     if square == true
@@ -119,6 +123,11 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
             rho2[itL] = permutedims(U, (1,2,4,3)) 
             rho2[itL+1] = contract(Diagonal(S), [2], Vd, [1])
 
+            # During last sweep, store singular values
+            if itS == Nsweeps
+                sing_value_list[itL] = S
+            end
+
             # Update left environment for next site
             Vlr[itL+1] = updateLeftEnv(Vlr[itL], rho[itL], rho[itL], permutedims(conj(rho2[itL]), (1,4,3,2)))
         end
@@ -143,7 +152,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     # Double the inverse temperature
     beta += beta
 
-    return rho2, beta, Z
+    return rho2, beta, Z, sing_value_list
 
 end
 
@@ -161,7 +170,8 @@ Parameters:
 Returns:
 - `betas::Vector{Float64}`: Vector of inverse temperatures at each step.
 - `Zs::Vector{Float64}`: Vector of partition functions corresponding to each thermal state at the respective inverse temperatures.
-- `rhos::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors of the different thermal states.
+- `rhos::Vector{Vector{<:AbstractArray{<:Number, 4}}}`: Vector of local MPO tensors of the different thermal states.
+- `sing_value_lists::Vector{Vector{Vector{Float64}}}`: Singular values coming from the two-site update. First index is for different temperatures, second index is for sites, third index is for the various singular values.
 
 """
 function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector)
@@ -175,24 +185,27 @@ function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector)
     betas = Vector{Float64}(undef, Nsteps + 1)
     Zs = Vector{Float64}(undef, Nsteps + 1)
     rhos = Vector{Any}(undef, Nsteps + 1)
+    sing_value_lists = Vector{Any}(undef, Nsteps + 1)
 
     # Store initial values
     betas[1] = beta0
     Zs[1] = Z0
     rhos[1] = deepcopy(rho0)
+    # sing_value_lists[1] will remain undefined
 
     for n in 1:Nsteps
 
-        rho, beta, Z = XTRG_update(rho, beta)
+        rho, beta, Z, sing_value_list = XTRG_update(rho, beta)
 
         # Store updated values
         betas[n+1] = beta
         Zs[n+1] = Z
         rhos[n+1] = deepcopy(rho)
+        sing_value_lists[n+1] = sing_value_list
 
     end
 
-    return betas, Zs, rhos
+    return betas, Zs, rhos, sing_value_lists
 end
 
 end
