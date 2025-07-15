@@ -17,4 +17,4 @@ analytical solutions. Seems like we're missing out on some factors (hopefully on
 
 # Messages Damiano:
 
-- 
+- L = 25 is taking a lot and may fail. also, the singular value thing makes sense only as long as Z does not change order of magnitude, otherwise one has to complicate it a bit by "normalizing" the singular values with some root of Z (see jupyter notebook for details). for now i will focus on the presentation and leave improvements for later in case we have time
