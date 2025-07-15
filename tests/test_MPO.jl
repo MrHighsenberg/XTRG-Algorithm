@@ -79,13 +79,13 @@ end
 end
 
 @testset "square_mpo" begin
-    L = 3
-    D = 10
-    d = 10
+    L = 5
+    D = 4
+    d = 3
     mpo = vcat([rand(ComplexF64, 1, d, D, d)], [rand(ComplexF64, D, d, D, d) for _ in (2:L-1)], [rand(ComplexF64, D, d, 1, d)])
     mpo2 = square_mpo(mpo)
-    mat1 = reshape(mpo_to_tensor(mpo), (d^3, d^3))^2
-    mat2 = reshape(mpo_to_tensor(mpo2), (d^3, d^3))
+    mat1 = reshape(mpo_to_tensor(mpo), (d^L, d^L))^2
+    mat2 = reshape(mpo_to_tensor(mpo2), (d^L, d^L))
     @test mat1 ≈ mat2
 end
 
