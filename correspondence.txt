@@ -17,4 +17,13 @@ analytical solutions. Seems like we're missing out on some factors (hopefully on
 
 # Messages Damiano:
 
-- L = 25 is taking a lot and may fail. also, the singular value thing makes sense only as long as Z does not change order of magnitude, otherwise one has to complicate it a bit by "normalizing" the singular values with some root of Z (see jupyter notebook for details). for now i will focus on the presentation and leave improvements for later in case we have time
+- Running the jupyter notebook with...
+    . Nsteps = 20 takes about 1 min on my laptop and convergence is always successful;
+    . Nsteps = 21 takes about 2 mins but for the last step, beta = 1.048576 ---> beta = 2.097152, you violate your convergence threshold (with convergence=1e-8), but the corresponding last dot in the plot still looks fine;
+    . with Nsteps = 22 the last step (beta = 1.048576 ---> beta = 2.097152) runs on and on but nothing gets printed relative to the last step (beta = 2.097152 ---> beta = 4. ...) (why? is it super super slow, or does sth go wrong?)
+
+- Comment on the lack of convergence for Nsteps > 20: after about the first 20 steps/for beta = O(1), the non-normalized state exp(- beta H) starts significantly differing from identity. This is seen in the plot beta |--> Z as well, where one sees that Z is basically constant and equal to trace(identity) = 2^L = 1024 throughout the first 20 steps, and then suddenly starts gaining orders of magnitude. Why is O(1) the "critical" order of magnitude for beta, beyond which things change? Because the matrix elements of H have the order of magnitude of J = 1. Or better, the eigenvalues of H with largest absolute value are O(J*L), as they are sums of O(L) single-fermion eigenvalues epsilon_k. Then as long as beta << 1, the exponent -beta H is "close to zero", or equivalently the non-normalized state exp(- beta H) is close to identity. Long story short: the initial beta_0 and the maximal number of steps Nsteps = 20 we were instructed to use were computed as solutions of the "equation" 2^(Nsteps) * beta_0 * (biggest eigenvalue of H) = O(1), with (biggest eigenvalue of H) = O(J * L) = O(10).
+
+...but then is XTRG really useful to explore low temperature/high beta physics?
+
+- the singular value thing i added is really meaningful only as long as the partition function (i.e. the state's normalization constant) Z does not change order of magnitude, which is the case for Nsteps <= 20. otherwise one would need to improve our computations  by sort of "normalizing" the singular values with the Lth root of Z or sth like that (see  last cell, jupyter notebook for details). for now i would focus on the presentation and leave improvements for later in case we have time.
