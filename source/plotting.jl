@@ -56,13 +56,16 @@ function plot_singular_values(betas, sing_value_lists, site_index, n_sing_values
     site_sing_values = [Float64[] for _ in 1:n_sing_values]
     min_n = 2  # Start from 2 since we don't have singular values for beta_0
     
+    # Extract chaing length
+    L = length(sing_value_lists[2])
+
     # Extract singular values for each XTRG step
     for n in 2:(Nsteps + 1)
         available_sing_vals = length(sing_value_lists[n][site_index])
-        
+        tot_weigth = sum(sing_value_lists[n][site_index])
         for i in 1:n_sing_values
             if i <= available_sing_vals
-                push!(site_sing_values[i], sing_value_lists[n][site_index][i])
+                push!(site_sing_values[i], sing_value_lists[n][site_index][i]/tot_weigth)
             end
         end
     end

@@ -26,4 +26,9 @@ analytical solutions. Seems like we're missing out on some factors (hopefully on
 
 ...but then is XTRG really useful to explore low temperature/high beta physics?
 
-- the singular value thing i added is really meaningful only as long as the partition function (i.e. the state's normalization constant) Z does not change order of magnitude, which is the case for Nsteps <= 20. otherwise one would need to improve our computations  by sort of "normalizing" the singular values with the Lth root of Z or sth like that (see  last cell, jupyter notebook for details). for now i would focus on the presentation and leave improvements for later in case we have time.
+- everything works just as well with square = false in XTRG_update/algorithm, and takes actulally a bit faster (like, half the time as  with square = true for Nsteps = 21, 22)
+
+- with my university macbook Nsteps = 22/23 is also working in less than 10 mins! (with either square = true or false). We can probably push a bit further, also by tweaking parameters. we can come back to this after the presentation is ready.
+
+- added normalization to singualr values. things didnt work a nicely as i hoped if one normalizes with roots of Z. Instead singular values are now just normalized s.t. they add up to 1 (for a given temperature and given site)
+
