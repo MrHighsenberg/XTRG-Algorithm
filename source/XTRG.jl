@@ -166,6 +166,7 @@ Parameters:
 - `beta0::Float64`: Initial inverse temperature to start the XTRG algorithm.
 - `Nsteps::Int`: Number of executions of the XTRG update.
 - `rho0::Vector{<:AbstractArray{<:Number, 4}}`: Vector of local MPO tensors of the initial unnormalized quantum state.
+- `square::Bool`: If true the updated rho is initialized as the square of rho, otherwise increase bond dimension by padding with zeros.
 
 Returns:
 - `betas::Vector{Float64}`: Vector of inverse temperatures at each step.
@@ -174,7 +175,7 @@ Returns:
 - `sing_value_lists::Vector{Vector{Vector{Float64}}}`: Singular values coming from the two-site update. First index is for different temperatures, second index is for sites, third index is for the various singular values.
 
 """
-function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector)
+function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector; square::Bool=true)
 
     # Set initial values for iterative update
     beta = beta0
@@ -195,7 +196,7 @@ function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector)
 
     for n in 1:Nsteps
 
-        rho, beta, Z, sing_value_list = XTRG_update(rho, beta)
+        rho, beta, Z, sing_value_list = XTRG_update(rho, beta, square = square)
 
         # Store updated values
         betas[n+1] = beta
