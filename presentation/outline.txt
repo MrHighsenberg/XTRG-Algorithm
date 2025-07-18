@@ -7,15 +7,16 @@ Presentation outline (tot 16/17 slides, 35/40 mins):
 - XTRG algorithm
 - XTRG update, i.e. how exactly we approximate/compress the square of an MPO
 - linear initialization
-3) CODE (9 slides, 1 slide per main method, to go through quickly. Title + one-line description + drawing + code screenshot)
-- updateLeftEnv
-- add_mpo (needed for linear initialization)
-- square_mpo (for XTRG step, eith result to be compressed)
-- trace_mpo
-- normalize_mpo (for convergence checks)
-- canonical forms, e.g. left 
-- XTRG_update
-- XTRG_algorithm
+3) CODE (9 slides, 1 slide per main method, to go through quickly. Title + one-line description + one line on why needed + drawing + code screenshot)
+In order:
+- add_mpo / add operators in MPO representation / we need this for linear initialization, rho (beta0) = ...
+- canonical forms, e.g. leftcanonicalmpo! / bring an MPO to left-canonical form by treating it as an MPS (with merged physical legs) / needed to simplify the minimization equations during XTRG update
+- square_mpo (for XTRG step, eith result to be compressed) / square operators in MPO representation / needed as a starting poin in XTRG update (recall: e^... beta -> ... 2beta = ... beta ..^2), to be later compressed
+- updateLeftEnv / get left and right environment tensors V_L, V_R needed in the update of C_l C_{l+1} from the environment tensors used to update C_{l-1} C_l / needed to update the tensors C_l that make up the approximation of e^{-2beta..}
+- normalize_mpo / noramlize an operator O in MPO form with the Frobenius norm ||O||_F / used to keep track of convergence (with O = ...)
+- trace_mpo / compute trace of an operator in MPO form / needed to compute Z = tr(...)
+- XTRG_update / this function combines all previous functions and more. in essence, it takes as input an MPO (for us,  e^.. in MPO form) and returns its square in MPO, after truncation 
+- XTRG_algorithm /  function that calls XTRG_update iteratively, and returns data (......) from all iterations
 4) RESULTS ON XY model (3 slides)
 - basics on analytics
 - show plot for Z(beta)

@@ -32,3 +32,4 @@ analytical solutions. Seems like we're missing out on some factors (hopefully on
 
 - added normalization to singualr values. things didnt work a nicely as i hoped if one normalizes with roots of Z. Instead singular values are now just normalized s.t. they add up to 1 (for a given temperature and given site)
 
+- presentation: first draft is complete, see Term_Project_XTRG_Presentation_v2.pptx. Please check out 2nd slide for a to-do list 
