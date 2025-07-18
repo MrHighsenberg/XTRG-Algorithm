@@ -1,19 +1,6 @@
 # Messages Matthias:
 
-- Modified the storage of the updated rho2 tensor in the XTRG update (only complex conjugate during
- the environment updates seemed more efficient in the end)
-
-- States are not normalized anymore and leftcanonicalized in the beginning of each XTRG update (this should do the job, seems like we may 
-not need rightcanonicalmpo! and sitecanonicalmpo!)
-
-- Changed the canonicalization methods to in-place updates
-
-- Added the trace_mpo function with a unit test, and integrated the line in the XTRG update
-
-- Finished the main XTRG algorithm function and prepared for execution, plotting against analytical partition function set up
-
-- Plot looks not too bad even even though there's orders of magnitude in difference, the curve shape looks fine though compared to the
-analytical solutions. Seems like we're missing out on some factors (hopefully only that). Need your help to check what I've missed here!
+- 
 
 # Messages Damiano:
 
