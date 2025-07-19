@@ -179,14 +179,6 @@ Output:
 """
 function updateLeftEnv(V::AbstractArray, A::AbstractArray, B::AbstractArray, C::AbstractArray)
 
-    VA = contract(V, [3], A, [1])
-    VAB = contract(VA, [2, 3], B, [1, 4])
-    VABC = contract(VAB, [1,3,4], C, [1,2,4])
-    return permutedims(VABC, [3,2,1])
-
-end
-
-
     # Checking dimensionality errors
     if ndims(V) != 3
         error("In updateLeftEnv, got parameter V with $(ndims(V)) dimensions. V must have 3 dimensions.")
@@ -200,5 +192,11 @@ end
     if ndims(C) != 4
         error("In updateLeftEnv, got parameter C with $(ndims(C)) dimensions. C must have 4 dimensions.")
     end
-    
+
+    VA = contract(V, [3], A, [1])
+    VAB = contract(VA, [2, 3], B, [1, 4])
+    VABC = contract(VAB, [1,3,4], C, [1,2,4])
+    return permutedims(VABC, [3,2,1])
+end
+
 end
