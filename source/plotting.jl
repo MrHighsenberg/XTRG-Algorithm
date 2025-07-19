@@ -103,6 +103,9 @@ function plot_singular_values(betas, singvals, bond_index, n_singvals; Nsteps=le
         mkpath(dir)
     end
     savefig(p, "plots/singular_values_bond_($bond_index, $(bond_index + 1)).png")  
+
+    # Display the plot
+    display(p)
 end
 
 end
