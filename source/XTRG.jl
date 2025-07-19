@@ -9,7 +9,7 @@ import .MPO: zero_mpo, add_mpo, square_mpo, trace_mpo, leftcanonicalmpo!, normal
 """
     XTRG_update(rho::Vector, beta::Float64; square::Bool, Nsweeps::Int, convergence::Float64, alpha::Float64, tolerance::Float64, Dmax::Int)
 
-Function performing a single update of the XTRG algorithm from inverse temperatures beta ---> 2*beta
+Function performing a single update of the XTRG algorithm from inverse temperature beta ---> 2*beta
 
 Parameters:
 - `rho::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature beta.
@@ -25,10 +25,10 @@ Returns:
 - `rho2::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature 2*beta.
 - `beta::Float64`: Increased inverse temperature 2*beta for the updated state rho2.
 - `Z::Float64`: Partition function corresponding to the updated state rho2.
-- `sing_value_list::Vector{Vector{Float64}}`: Vector of length L - 1 whose itL-th entry contains the singular values obtained after the update of sites itL and itL + 1, in the last (left->right) sweep.
+- `singvals::Vector{Vector{Float64}}`: Vector of length L-1 containing the singular values at the bonds of rho2 after the last left to right sweep.
 
 """
-function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-8, 
+function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-12, 
     alpha::Float64=1.5, tolerance::Float64=1e-8, Dmax::Int=75)
 
     # Extract chain length
@@ -39,7 +39,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     Nkeep = min(Int(round(alpha * D)), Dmax)
 
     # Initialize vector which will store singular values
-    sing_value_list = [Float64[] for _ in 1:(L-1)]
+    singvals = [Float64[] for _ in 1:(L-1)]
 
     # # # Choose initialization mode # # #
     if square == true
@@ -123,9 +123,9 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
             rho2[itL] = permutedims(U, (1,2,4,3)) 
             rho2[itL+1] = contract(Diagonal(S), [2], Vd, [1])
 
-            # During last sweep, store singular values
+            # Extract singular values during last sweep
             if itS == Nsweeps
-                sing_value_list[itL] = S
+                singvals[itL] = S
             end
 
             # Update left environment for next site
@@ -152,7 +152,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     # Double the inverse temperature
     beta += beta
 
-    return rho2, beta, Z, sing_value_list
+    return rho2, beta, Z, singvals
 
 end
 
@@ -172,7 +172,7 @@ Returns:
 - `betas::Vector{Float64}`: Vector of inverse temperatures at each step.
 - `Zs::Vector{Float64}`: Vector of partition functions corresponding to each thermal state at the respective inverse temperatures.
 - `rhos::Vector{Vector{<:AbstractArray{<:Number, 4}}}`: Vector of local MPO tensors of the different thermal states.
-- `sing_value_lists::Vector{Vector{Vector{Float64}}}`: Singular values coming from the two-site update. First index is for different temperatures, second index is for sites, third index is for the various singular values.
+- `singvals::Vector{Vector{Vector{Float64}}}`: Vector containing the singular values at the bonds of the rhos.
 
 """
 function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector; square::Bool=true)
@@ -186,27 +186,26 @@ function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector; square::Bool=
     betas = Vector{Float64}(undef, Nsteps + 1)
     Zs = Vector{Float64}(undef, Nsteps + 1)
     rhos = Vector{Any}(undef, Nsteps + 1)
-    sing_value_lists = Vector{Any}(undef, Nsteps + 1)
+    singvals = Vector{Any}(undef, Nsteps + 1)
 
     # Store initial values
     betas[1] = beta0
     Zs[1] = Z0
     rhos[1] = deepcopy(rho0)
-    # sing_value_lists[1] will remain undefined
 
     for n in 1:Nsteps
 
-        rho, beta, Z, sing_value_list = XTRG_update(rho, beta, square = square)
+        rho, beta, Z, singvals_list = XTRG_update(rho, beta, square = square)
 
         # Store updated values
         betas[n+1] = beta
         Zs[n+1] = Z
         rhos[n+1] = deepcopy(rho)
-        sing_value_lists[n+1] = sing_value_list
+        singvals[n+1] = singvals_list
 
     end
 
-    return betas, Zs, rhos, sing_value_lists
+    return betas, Zs, rhos, singvals
 end
 
 end

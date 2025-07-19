@@ -97,14 +97,14 @@ end
         @test trace_mpo(id_mpo) ≈ d^L
     end
     
-    @testset "Zero MPO trace" begin
+    @testset "zero MPO trace" begin
         d = 3
         L = 2
         zero_mpo_test = zero_mpo(L, d)
         @test trace_mpo(zero_mpo_test) ≈ 0.0
     end
     
-    @testset "Single site MPO" begin
+    @testset "single site MPO" begin
         sigma_x = [0.0 1.0; 1.0 0.0]
         mpo = [reshape(sigma_x, 1, 2, 1, 2)]
         @test trace_mpo(mpo) ≈ tr(sigma_x)
