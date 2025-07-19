@@ -9,7 +9,7 @@ import .MPO: zero_mpo, add_mpo, square_mpo, trace_mpo, leftcanonicalmpo!, normal
 """
     XTRG_update(rho::Vector, beta::Float64; square::Bool, Nsweeps::Int, convergence::Float64, alpha::Float64, tolerance::Float64, Dmax::Int)
 
-Function performing a single update of the XTRG algorithm from inverse temperature beta ---> 2*beta
+Function performing a single update of the XTRG algorithm from inverse temperature beta ---> 2*beta.
 
 Parameters:
 - `rho::Vector{<:AbstractArray{<:Number, 4}}`: Vector of MPO tensors corresponding to the unnormalized quantum state at inverse temperature beta.
@@ -28,7 +28,7 @@ Returns:
 - `singvals::Vector{Vector{Float64}}`: Vector of length L-1 containing the singular values at the bonds of rho2 after the last left to right sweep.
 
 """
-function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-12, 
+function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int=5, convergence::Float64=1e-8, 
     alpha::Float64=1.5, tolerance::Float64=1e-8, Dmax::Int=75)
 
     # Extract chain length
@@ -59,7 +59,7 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     println("# # # Started Variational Optimization # # #")
     println("============================================")
     println("Temperature update: $beta ---> $(2*beta)")
-    println("============================================")
+    println("============================================")    
     println(">>> # of sites = $L")
     println(">>> square mode = $square")
     println(">>> # of sweeps = $Nsweeps x 2")
@@ -143,7 +143,6 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     square_rho[1] = -square_rho[1]
     norm = normalize_mpo!(add_mpo(square_rho, rho2))
     println("Convergence successful: $((norm^2) < convergence)")
-    println("\n")
     flush(stdout)
 
     # Compute the partition function 
@@ -195,7 +194,11 @@ function XTRG_algorithm(beta0::Float64, Nsteps::Int, rho0::Vector; square::Bool=
 
     for n in 1:Nsteps
 
+        start = time()
+        # Compute single XTRG update
         rho, beta, Z, singvals_list = XTRG_update(rho, beta, square = square)
+        println("Runtime XTRG update: $(round(time() - start, digits=3)) seconds")
+        println("\n")
 
         # Store updated values
         betas[n+1] = beta
