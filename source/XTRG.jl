@@ -139,11 +139,13 @@ function XTRG_update(rho::Vector, beta::Float64; square::Bool=true, Nsweeps::Int
     end
 
     # Evaluate whether the optimization has sufficiently converged
-    # square_rho = square_mpo(rho)
-    # square_rho[1] = -square_rho[1]
-    # norm = normalize_mpo!(add_mpo(square_rho, rho2))
-    # println("Convergence successful: $((norm^2) < convergence)")
-    # flush(stdout)
+    if Nkeep < Dmax * 2/3
+        square_rho = square_mpo(rho)
+        square_rho[1] = -square_rho[1]
+        norm = normalize_mpo!(add_mpo(square_rho, rho2))
+        println("Convergence successful: $((norm^2) < convergence)")
+        flush(stdout)
+    end
 
     # Compute the partition function 
     Z = real(trace_mpo(rho2))
