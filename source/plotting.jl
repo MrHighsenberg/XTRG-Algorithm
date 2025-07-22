@@ -1,5 +1,5 @@
 module plotting
-export plot_partition_function, plot_singular_values
+export plot_partition_function, plot_singular_values, plot_Z_error
 using Plots, Measures, Statistics, LinearAlgebra
 
 """
@@ -44,6 +44,48 @@ function plot_partition_function(betas, Zs, Zs_analytical)
         mkpath(dir)
     end
     savefig(p, "plots/partition_function_xy-model.png")
+
+    # Display the plot
+    display(p)
+end
+
+"""
+    plot_Z_error(betas, Zs, Zs_analytical)
+
+Plots the partition function relative error (Z_num - Z_ex)/Z_ex as a function of beta.
+
+Parameters:
+- `betas`: Vector of inverse temperatures
+- `Zs`: Partition function values from XTRG algorithm  
+- `Zs_analytical`: Analytical partition function values
+"""
+function plot_Z_error(betas, Zs, Zs_analytical)
+    # Compute relative errors
+    Zerrors = (Zs .- Zs_analytical) ./ Zs_analytical
+
+    # Plot relative errors against inverse temperature
+    p = plot(betas, abs.(Zerrors), 
+         label="Relative Error |Z_XTRG - Z_exact|/Z_exact", 
+         marker=:circle, 
+         markersize=4,
+         linewidth=2,
+         xscale=:log10,
+         yscale=:log10,
+         size=(800,500),
+         dpi = 300,
+         left_margin=5mm
+         )
+
+    xlabel!("Inverse Temperature \$\\beta\$")
+    ylabel!("Relative Error")
+    title!("Partition Function Relative Error")
+
+    # Save the plot 
+    dir = dirname("plots/partition_function_error.png")
+    if !isdir(dir)
+        mkpath(dir)
+    end
+    savefig(p, "plots/partition_function_error.png")
 
     # Display the plot
     display(p)
