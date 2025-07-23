@@ -65,7 +65,7 @@ function plot_Z_error(betas, Zs, Zs_analytical)
 
     # Plot relative errors against inverse temperature
     p = plot(betas, abs.(Zerrors), 
-         label="Relative Error |Z_XTRG - Z_exact|/Z_exact", 
+         label="Relative Error (Z_XTRG - Z_exact)/Z_exact", 
          marker=:circle, 
          markersize=4,
          linewidth=2,
